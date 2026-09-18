@@ -3,25 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bell,
   Boxes,
   CarFront,
   ChartNoAxesCombined,
+  ChevronDown,
   FileText,
   Gauge,
+  LogOut,
   MessageCircleMore,
   PackageSearch,
-  Settings,
-  Users,
-  Sparkles,
-  Bell,
   Search,
-  ChevronDown,
+  Settings,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Gauge },
-  { href: "/conversas", label: "Conversas", icon: MessageCircleMore, badge: "7" },
+  { href: "/conversas", label: "Conversas", icon: MessageCircleMore },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/veiculos", label: "Veículos", icon: CarFront },
   { href: "/catalogo", label: "Catálogo", icon: PackageSearch },
@@ -30,7 +31,32 @@ const navItems = [
   { href: "/relatorios", label: "Relatórios", icon: ChartNoAxesCombined },
 ];
 
-export function AppShell({ children }: { children: ReactNode }) {
+function initials(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "AP";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts.at(-1)![0]).toUpperCase();
+}
+
+const roleLabels: Record<string, string> = {
+  owner: "Proprietário",
+  admin: "Administrador",
+  manager: "Gerente",
+  agent: "Atendente",
+  viewer: "Visualizador",
+};
+
+export function AppShell({
+  children,
+  companyName,
+  userName,
+  role,
+}: {
+  children: ReactNode;
+  companyName: string;
+  userName: string;
+  role: string;
+}) {
   const pathname = usePathname();
 
   return (
@@ -38,57 +64,43 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="app-sidebar">
         <div className="sidebar-brand">
           <div className="brand-mark"><CarFront size={22} strokeWidth={2.2} /></div>
-          <div>
-            <strong>AutoParts</strong>
-            <span>CRM AI</span>
-          </div>
+          <div><strong>AutoParts</strong><span>CRM AI</span></div>
         </div>
 
         <div className="workspace-switcher">
-          <div className="workspace-avatar">AP</div>
-          <div className="workspace-copy">
-            <span>Empresa</span>
-            <strong>Auto Peças Exemplo</strong>
-          </div>
+          <div className="workspace-avatar">{initials(companyName)}</div>
+          <div className="workspace-copy"><span>Empresa</span><strong>{companyName}</strong></div>
           <ChevronDown size={16} />
         </div>
 
         <nav className="sidebar-nav" aria-label="Navegação principal">
           <div className="nav-section-label">Operação</div>
-          {navItems.map(({ href, label, icon: Icon, badge }) => {
+          {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link className={active ? "nav-item active" : "nav-item"} href={href} key={href}>
-                <Icon size={18} strokeWidth={1.9} />
-                <span>{label}</span>
-                {badge ? <span className="nav-badge">{badge}</span> : null}
+                <Icon size={18} strokeWidth={1.9} /><span>{label}</span>
               </Link>
             );
           })}
-
           <div className="nav-section-label secondary">Sistema</div>
           <Link className={pathname.startsWith("/configuracoes") ? "nav-item active" : "nav-item"} href="/configuracoes">
-            <Settings size={18} strokeWidth={1.9} />
-            <span>Configurações</span>
+            <Settings size={18} strokeWidth={1.9} /><span>Configurações</span>
           </Link>
         </nav>
 
         <div className="sidebar-ai-card">
           <div className="ai-card-icon"><Sparkles size={18} /></div>
-          <div>
-            <strong>IA ativa</strong>
-            <p>Catálogo protegido por regras anti-alucinação.</p>
-          </div>
+          <div><strong>IA protegida</strong><p>Preço, estoque e compatibilidade sempre vêm do catálogo.</p></div>
           <span className="live-dot" />
         </div>
 
         <div className="sidebar-user">
-          <div className="user-avatar">EA</div>
-          <div>
-            <strong>Ediney Andrade</strong>
-            <span>Administrador</span>
-          </div>
-          <ChevronDown size={16} />
+          <div className="user-avatar">{initials(userName)}</div>
+          <div><strong>{userName}</strong><span>{roleLabels[role] ?? role}</span></div>
+          <form action="/api/auth/logout" method="post">
+            <button className="sidebar-logout" type="submit" aria-label="Sair"><LogOut size={15}/></button>
+          </form>
         </div>
       </aside>
 
@@ -100,7 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <kbd>⌘ K</kbd>
           </div>
           <div className="topbar-actions">
-            <div className="ai-status-pill"><span className="live-dot" /> IA online</div>
+            <div className="ai-status-pill"><span className="live-dot" /> Sistema online</div>
             <button className="icon-button" aria-label="Notificações"><Bell size={19} /></button>
           </div>
         </header>
