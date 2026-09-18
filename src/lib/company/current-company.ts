@@ -10,7 +10,7 @@ export async function getCurrentCompany() {
 
   const { data: membership } = await supabase
     .from("company_members")
-    .select("company_id,role")
+    .select("company_id,branch_id,role")
     .eq("user_id", user.id)
     .eq("active", true)
     .limit(1)
@@ -20,7 +20,7 @@ export async function getCurrentCompany() {
 
   const { data: company } = await supabase
     .from("companies")
-    .select("id,name,slug")
+    .select("id,name,slug,timezone,currency,business_type")
     .eq("id", membership.company_id)
     .maybeSingle();
 
@@ -29,6 +29,7 @@ export async function getCurrentCompany() {
   return {
     ...company,
     role: membership.role,
+    memberBranchId: membership.branch_id,
     user,
   };
 }
