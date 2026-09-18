@@ -120,7 +120,7 @@ export default async function OrcamentosPage({
             <td><span className={statusClass(quote.status)}>{labels[quote.status]??quote.status}</span></td>
             <td>{date.format(new Date(quote.created_at))}</td>
             <td>{quote.expires_at?date.format(new Date(quote.expires_at)):"Sem prazo"}</td>
-            <td><Link className="row-action-v2" prefetch={false} href={`/orcamentos/${quote.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
+            <td><Link className="row-action-v2" href={`/orcamentos/${quote.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
           </tr>)}</tbody>
         </table>
       </div>:<div className="empty-v2 commercial-empty-v5">
