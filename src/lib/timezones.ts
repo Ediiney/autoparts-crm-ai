@@ -34,3 +34,27 @@ export function timezoneLabel(timeZone: string) {
   const found = BRAZIL_TIMEZONES.find((item) => item.value === timeZone);
   return found ? `${found.label} · ${found.offset}` : timeZone;
 }
+
+export function startOfTodayInTimezone(timeZone: string) {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(now);
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  const offset = BRAZIL_TIMEZONES.find((item) => item.value === timeZone)?.offset.replace("UTC", "") ?? "-03:00";
+  return new Date(`${year}-${month}-${day}T00:00:00${offset}`).toISOString();
+}
+
+export function formatTimeInTimezone(value: string | Date, timeZone: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
