@@ -1442,6 +1442,60 @@ export type Database = {
           },
         ]
       }
+      reference_catalog_items: {
+        Row: {
+          active: boolean
+          application_text: string | null
+          applications: Json
+          category: string | null
+          external_code: string
+          id: string
+          manufacturer: string | null
+          name: string
+          normalized_name: string
+          original_code: string | null
+          provider: string
+          source_document: string | null
+          source_edition: string | null
+          source_url: string
+          synced_at: string
+        }
+        Insert: {
+          active?: boolean
+          application_text?: string | null
+          applications?: Json
+          category?: string | null
+          external_code: string
+          id?: string
+          manufacturer?: string | null
+          name: string
+          normalized_name?: string
+          original_code?: string | null
+          provider: string
+          source_document?: string | null
+          source_edition?: string | null
+          source_url: string
+          synced_at?: string
+        }
+        Update: {
+          active?: boolean
+          application_text?: string | null
+          applications?: Json
+          category?: string | null
+          external_code?: string
+          id?: string
+          manufacturer?: string | null
+          name?: string
+          normalized_name?: string
+          original_code?: string | null
+          provider?: string
+          source_document?: string | null
+          source_edition?: string | null
+          source_url?: string
+          synced_at?: string
+        }
+        Relationships: []
+      }
       supported_timezones: {
         Row: {
           active: boolean
@@ -1658,6 +1712,15 @@ export type Database = {
         }
         Returns: number
       }
+      get_dashboard_summary: {
+        Args: { p_branch_id?: string; p_today?: string }
+        Returns: Json
+      }
+      get_reports_summary: {
+        Args: { p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
+      get_workspace_bootstrap: { Args: never; Returns: Json }
       next_company_quote_number: {
         Args: { p_company_id: string }
         Returns: number
@@ -1669,6 +1732,22 @@ export type Database = {
           product_id: string
           score: number
           sku: string
+        }[]
+      }
+      search_reference_catalog: {
+        Args: { p_limit?: number; p_provider?: string; p_query: string }
+        Returns: {
+          application_text: string
+          applications: Json
+          category: string
+          external_code: string
+          id: string
+          manufacturer: string
+          name: string
+          original_code: string
+          provider: string
+          score: number
+          source_url: string
         }[]
       }
     }
