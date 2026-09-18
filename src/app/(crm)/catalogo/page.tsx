@@ -42,13 +42,21 @@ export default async function CatalogPage({searchParams}:{searchParams:Promise<P
       <div className="page-heading-v2-actions"><Link className="button-v2 secondary" href="/catalogo/importar"><Upload size={14}/> Importar</Link><Link className="button-v2 primary" href="/catalogo/nova"><PackagePlus size={14}/> Novo produto</Link></div>
     </div>
 
-    <div className="catalog-kpis-v3">
-      <div><span>Produtos ativos</span><strong>{payload.count??0}</strong></div>
-      <div><span>Com preço</span><strong>{priced}</strong></div>
-      <div><span>Sem preço</span><strong>{Math.max(0,rows.length-priced)}</strong></div>
-      <div><span>Filial</span><strong>{workspace.branch?.name??"Consolidado"}</strong></div>
-    </div>
+    <section className="catalog-command-v5">
+      <div className="catalog-command-main-v5">
+        <span>Base operacional</span>
+        <strong>{payload.count??0}</strong>
+        <p>produtos ativos no catálogo da empresa</p>
+        <div><b>{workspace.branch?.name??"Consolidado"}</b><small>filial selecionada</small></div>
+      </div>
+      <div className="catalog-command-stats-v5">
+        <div><span>Com preço</span><strong>{priced}</strong><small>prontos para cotação</small></div>
+        <div><span>Sem preço</span><strong>{Math.max(0,rows.length-priced)}</strong><small>precisam de valor comercial</small></div>
+        <div><span>Exibidos</span><strong>{filtered.length}</strong><small>após filtros atuais</small></div>
+      </div>
+    </section>
 
+    <section className="catalog-workspace-v5">
     <section className="catalog-toolbar-v2">
       <form className="catalog-search-v2" method="get"><Search size={16}/><input name="q" defaultValue={q} placeholder="Buscar por descrição, SKU ou código original"/><input type="hidden" name="view" value={view}/><input type="hidden" name="stock" value={params.stock??"all"}/><input type="hidden" name="source" value={params.source??""}/></form>
       <div className="catalog-filter-v2"><Filter size={14}/><select name="stock" defaultValue={params.stock??"all"} form="catalog-filter-form"><option value="all">Todos os estoques</option><option value="available">Disponível</option><option value="low">Estoque baixo</option><option value="zero">Sem estoque</option></select></div>
@@ -78,5 +86,6 @@ export default async function CatalogPage({searchParams}:{searchParams:Promise<P
         <td><Link className="row-action-v2" prefetch={false} href={`/catalogo/${product.id}`}>Abrir</Link></td>
       </tr>;
     })}</tbody></table></div>}
+    </section>
   </div>;
 }
