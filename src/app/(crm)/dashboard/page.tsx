@@ -180,7 +180,7 @@ export default async function DashboardPage() {
                           <td>{product.sku}</td>
                           <td className="money">{price !== null ? brl(price) : "Sem preço"}</td>
                           <td className={qty > 0 ? "stock-good" : "stock-zero"}>{qty > 0 ? `${qty} un.` : "Sem saldo"}</td>
-                          <td><Link href={`/catalogo/${product.id}`} aria-label={`Abrir ${product.name}`}><ArrowUpRight size={15} color="#8390a3" /></Link></td>
+                          <td><Link href={`/catalogo/${product.id}`} prefetch={false} aria-label={`Abrir ${product.name}`}><ArrowUpRight size={15} color="#8390a3" /></Link></td>
                         </tr>
                       );
                     })}
