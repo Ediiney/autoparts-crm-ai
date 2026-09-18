@@ -1,4 +1,4 @@
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildClarification } from "@/lib/ai/clarification";
 import { extractPartIntent } from "@/lib/ai/extract-intent";
 import { chooseCandidate, searchCatalog } from "@/lib/catalog/search";
@@ -48,7 +48,7 @@ function multipleMatchQuestion(candidates: CatalogCandidate[]) {
 
 async function ensureConversation(
   supabase: SupabaseClient,
-  user: User,
+  user: { id: string },
   input: HandleMessageInput,
 ) {
   if (input.conversationId) return input.conversationId;
@@ -120,7 +120,7 @@ function interactionBase(
 
 export async function handleCustomerMessage(
   supabase: SupabaseClient,
-  user: User,
+  user: { id: string },
   input: HandleMessageInput,
 ) {
   const started = Date.now();
