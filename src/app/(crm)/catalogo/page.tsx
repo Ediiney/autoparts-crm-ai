@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Boxes,
   Filter,
   Grid2X2,
   List,
