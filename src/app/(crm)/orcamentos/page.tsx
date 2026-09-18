@@ -2,14 +2,14 @@ import { PageHeader } from "@/components/page-header";
 import { Button, Card, StatusBadge } from "@/components/ui";
 import { FileText, Filter, Plus, Search } from "lucide-react";
 
-const quotes=[
+const quotes = [
   ["#1048","João Silva","Honda Civic 2008","R$ 329,90","Hoje, 10:44","Rascunho","warning"],
   ["#1047","Rafael Freitas","Hyundai HB20 2019","R$ 980,50","Hoje, 09:56","Enviado","info"],
   ["#1046","Marcos Oficina","Chevrolet Onix 2020","R$ 1.842,00","Ontem, 16:21","Aceito","success"],
   ["#1045","Auto Mecânica Sul","VW Polo 2019","R$ 712,40","Ontem, 14:08","Enviado","info"],
   ["#1044","Carlos Lima","Toyota Corolla 2015","R$ 459,00","17 set, 18:32","Expirado","danger"],
   ["#1043","Bruno Alves","Honda Fit 2012","R$ 559,80","17 set, 12:15","Aceito","success"],
-];
+] as const;
 
 export default function OrcamentosPage(){
   return (
