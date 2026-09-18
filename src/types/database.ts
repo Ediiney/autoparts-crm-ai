@@ -920,6 +920,181 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          discount: number
+          id: string
+          order_id: string
+          product_id: string | null
+          quantity: number
+          sku: string | null
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description: string
+          discount?: number
+          id?: string
+          order_id: string
+          product_id?: string | null
+          quantity?: number
+          sku?: string | null
+          total: number
+          unit_price: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          discount?: number
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          quantity?: number
+          sku?: string | null
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          branch_id: string | null
+          company_id: string
+          confirmed_at: string | null
+          conversation_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          delivered_at: string | null
+          delivery_address: string | null
+          delivery_type: string
+          discount: number
+          id: string
+          notes: string | null
+          number: number
+          payment_method: string | null
+          payment_status: string
+          quote_id: string | null
+          shipping: number
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          company_id: string
+          confirmed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_address?: string | null
+          delivery_type?: string
+          discount?: number
+          id?: string
+          notes?: string | null
+          number: number
+          payment_method?: string | null
+          payment_status?: string
+          quote_id?: string | null
+          shipping?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          company_id?: string
+          confirmed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_address?: string | null
+          delivery_type?: string
+          discount?: number
+          id?: string
+          notes?: string | null
+          number?: number
+          payment_method?: string | null
+          payment_status?: string
+          quote_id?: string | null
+          shipping?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_aliases: {
         Row: {
           alias: string
@@ -1704,6 +1879,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      convert_quote_to_order: {
+        Args: {
+          p_delivery_address?: string
+          p_delivery_type?: string
+          p_notes?: string
+          p_payment_method?: string
+          p_quote_id: string
+        }
+        Returns: string
+      }
       get_available_stock: {
         Args: {
           p_branch_id?: string
@@ -1735,6 +1920,14 @@ export type Database = {
       }
       get_inventory_page: {
         Args: { p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
+      get_orders_page: {
+        Args: { p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
+      get_quote_builder_data: {
+        Args: { p_branch_id?: string; p_product_limit?: number }
         Returns: Json
       }
       get_quotes_page: {
@@ -1782,6 +1975,17 @@ export type Database = {
           score: number
           source_url: string
         }[]
+      }
+      set_product_price: {
+        Args: {
+          p_branch_id?: string
+          p_cost?: number
+          p_price?: number
+          p_price_type?: string
+          p_product_id: string
+          p_source?: string
+        }
+        Returns: string
       }
     }
     Enums: {
