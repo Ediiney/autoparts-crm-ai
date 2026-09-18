@@ -1,30 +1,74 @@
 import { PageHeader } from "@/components/page-header";
 import { Button, Card, StatusBadge } from "@/components/ui";
-import { FileText, Filter, Plus, Search } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompany } from "@/lib/company/current-company";
+import { FileText, Plus } from "lucide-react";
 
-const quotes = [
-  ["#1048","João Silva","Honda Civic 2008","R$ 329,90","Hoje, 10:44","Rascunho","warning"],
-  ["#1047","Rafael Freitas","Hyundai HB20 2019","R$ 980,50","Hoje, 09:56","Enviado","info"],
-  ["#1046","Marcos Oficina","Chevrolet Onix 2020","R$ 1.842,00","Ontem, 16:21","Aceito","success"],
-  ["#1045","Auto Mecânica Sul","VW Polo 2019","R$ 712,40","Ontem, 14:08","Enviado","info"],
-  ["#1044","Carlos Lima","Toyota Corolla 2015","R$ 459,00","17 set, 18:32","Expirado","danger"],
-  ["#1043","Bruno Alves","Honda Fit 2012","R$ 559,80","17 set, 12:15","Aceito","success"],
-] as const;
+function tone(status: string): "neutral" | "success" | "warning" | "danger" | "info" | "purple" {
+  if (status === "accepted") return "success";
+  if (status === "sent") return "info";
+  if (status === "draft") return "warning";
+  if (status === "expired" || status === "rejected" || status === "cancelled") return "danger";
+  return "neutral";
+}
 
-export default function OrcamentosPage(){
+const labels: Record<string,string> = {
+  draft: "Rascunho",
+  sent: "Enviado",
+  accepted: "Aceito",
+  rejected: "Recusado",
+  expired: "Expirado",
+  cancelled: "Cancelado",
+};
+
+export default async function OrcamentosPage(){
+  const company = await getCurrentCompany();
+  if (!company) return null;
+
+  const supabase = await createClient();
+  const { data: quotes } = await supabase
+    .from("quotes")
+    .select("id,number,customer_id,status,total,created_at,expires_at")
+    .eq("company_id", company.id)
+    .order("created_at", { ascending: false })
+    .limit(60);
+
+  const rows = quotes ?? [];
+  const customerIds = [...new Set(rows.map((quote)=>quote.customer_id).filter((id): id is string => Boolean(id)))];
+  const { data: customers } = customerIds.length
+    ? await supabase.from("customers").select("id,name").eq("company_id", company.id).in("id", customerIds)
+    : { data: [] as Array<{id:string;name:string}> };
+
+  const customerMap = new Map((customers ?? []).map((customer)=>[customer.id,customer.name]));
+  const money = new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+  const date = new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+
   return (
     <>
-      <PageHeader eyebrow="Comercial" title="Orçamentos" description="Acompanhe propostas criadas a partir dos atendimentos e conversões." actions={<Button icon={<Plus size={15}/>}>Novo orçamento</Button>}/>
-      <div className="toolbar"><div className="toolbar-left"><div className="input-shell"><Search size={15}/><input placeholder="Buscar orçamento ou cliente..."/></div><button className="filter-button"><Filter size={14}/> Status</button></div></div>
-      <div className="quote-grid">
-        {quotes.map(([num,name,vehicle,total,date,status,tone])=>(
-          <Card className="quote-card" key={num}>
-            <div className="quote-top"><div><span className="quote-number">{num}</span><h3>{name}</h3></div><StatusBadge tone={tone}>{status}</StatusBadge></div>
-            <div className="quote-meta"><div><span>Veículo</span><strong>{vehicle}</strong></div><div><span>Valor</span><strong>{total}</strong></div></div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span className="time-label">{date}</span><Button variant="secondary" icon={<FileText size={13}/>}>Abrir</Button></div>
-          </Card>
-        ))}
-      </div>
+      <PageHeader eyebrow="Comercial" title="Orçamentos" description="Propostas geradas a partir dos atendimentos e conversões." actions={<Button icon={<Plus size={15}/>}>Novo orçamento</Button>}/>
+
+      {rows.length ? (
+        <div className="quote-grid">
+          {rows.map((quote)=>(
+            <Card className="quote-card" key={quote.id}>
+              <div className="quote-top">
+                <div><span className="quote-number">#{quote.number}</span><h3>{quote.customer_id ? customerMap.get(quote.customer_id) ?? "Cliente" : "Cliente"}</h3></div>
+                <StatusBadge tone={tone(quote.status)}>{labels[quote.status] ?? quote.status}</StatusBadge>
+              </div>
+              <div className="quote-meta">
+                <div><span>Valor</span><strong>{money.format(Number(quote.total ?? 0))}</strong></div>
+                <div><span>Validade</span><strong>{quote.expires_at ? date.format(new Date(quote.expires_at)) : "Sem prazo"}</strong></div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span className="time-label">Criado em {date.format(new Date(quote.created_at))}</span>
+                <Button variant="secondary" icon={<FileText size={13}/>}>Abrir</Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card><div className="empty-state"><FileText size={30}/><strong>Nenhum orçamento criado</strong><p>Quando uma cotação for salva durante o atendimento, ela aparecerá aqui.</p></div></Card>
+      )}
     </>
   );
 }
