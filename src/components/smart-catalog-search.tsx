@@ -45,11 +45,7 @@ export function SmartCatalogSearch({
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
+    if (trimmed.length < 2) return;
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
@@ -129,8 +125,15 @@ export function SmartCatalogSearch({
         <input
           value={query}
           onChange={(event) => {
-            setQuery(event.target.value);
-            setOpen(true);
+            const next = event.target.value;
+            setQuery(next);
+            if (next.trim().length < 2) {
+              setResults([]);
+              setOpen(false);
+              setError(null);
+            } else {
+              setOpen(true);
+            }
           }}
           onFocus={() => {
             if (query.trim().length >= 2) setOpen(true);
