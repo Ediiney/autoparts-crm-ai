@@ -141,7 +141,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $$
   select exists (
     select 1
     from public.companies c
@@ -158,7 +158,7 @@ as $
       and cm.role = any(p_roles)
       and cm.active = true
   );
-$;
+$$;
 
 revoke all on function private.is_company_member(uuid) from public;
 revoke all on function private.is_company_admin(uuid) from public;
