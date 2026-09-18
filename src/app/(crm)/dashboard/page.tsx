@@ -103,8 +103,8 @@ export default async function DashboardPage() {
           <p>Veja o que está acontecendo na {workspace.branch?.name ?? workspace.company.name} agora.</p>
         </div>
         <div className="dashboard-v4-actions">
-          <Link href="/orcamentos/novo" className="button-v2 secondary"><FileText size={15} /> Novo orçamento</Link>
-          <Link href="/conversas" className="button-v2 primary"><Plus size={15} /> Novo atendimento</Link>
+          <Link prefetch={false} href="/orcamentos/novo" className="button-v2 secondary"><FileText size={15} /> Novo orçamento</Link>
+          <Link prefetch={false} href="/conversas" className="button-v2 primary"><Plus size={15} /> Novo atendimento</Link>
         </div>
       </section>
 
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
           <span>Resumo de hoje</span>
           <strong>{money(acceptedValue + openValue)}</strong>
           <small>em oportunidades comerciais acompanhadas</small>
-          <Link href="/relatorios">Abrir análise <ArrowRight size={14} /></Link>
+          <Link prefetch={false} href="/relatorios">Abrir análise <ArrowRight size={14} /></Link>
         </div>
 
         <div className="dashboard-v4-kpis">
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
           <article className="crm-surface dashboard-v4-panel">
             <header className="dashboard-v4-panel-head">
               <div><span>Atendimento</span><h2>Conversas recentes</h2></div>
-              <Link href="/conversas">Ver todas <ArrowUpRight size={14}/></Link>
+              <Link prefetch={false} href="/conversas">Ver todas <ArrowUpRight size={14}/></Link>
             </header>
 
             {recentConversations.length ? (
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                 {recentConversations.map((item) => {
                   const name = item.customer_name || "Cliente";
                   return (
-                    <Link className="dashboard-v4-list-row" href={`/conversas?id=${item.id}`} key={item.id}>
+                    <Link prefetch={false} className="dashboard-v4-list-row" href={`/conversas?id=${item.id}`} key={item.id}>
                       <div className="dashboard-v4-avatar">{initials(name)}</div>
                       <div><strong>{name}</strong><span>{statusLabels[item.status] ?? item.status.replaceAll("_"," ")}</span></div>
                       <span className={`dashboard-v4-state ${item.status}`}>{statusLabels[item.status] ?? item.status}</span>
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
           <article className="crm-surface dashboard-v4-panel">
             <header className="dashboard-v4-panel-head">
               <div><span>Catálogo</span><h2>Produtos atualizados</h2></div>
-              <Link href="/catalogo">Abrir catálogo <ArrowUpRight size={14}/></Link>
+              <Link prefetch={false} href="/catalogo">Abrir catálogo <ArrowUpRight size={14}/></Link>
             </header>
 
             {products.length ? (
@@ -167,7 +167,7 @@ export default async function DashboardPage() {
                   const qty = Number(product.available_quantity ?? 0);
                   const price = product.price === null ? null : Number(product.price);
                   return (
-                    <Link href={`/catalogo/${product.id}`} key={product.id}>
+                    <Link prefetch={false} href={`/catalogo/${product.id}`} key={product.id}>
                       <div className="dashboard-v4-product-icon"><PackageSearch size={17}/></div>
                       <div><strong>{product.name}</strong><span>{product.sku}</span></div>
                       <div><strong>{price !== null ? money(price) : "Sem preço"}</strong><span className={qty > 0 ? "ok" : ""}>{qty > 0 ? `${qty} un.` : "Sem saldo"}</span></div>
@@ -200,14 +200,14 @@ export default async function DashboardPage() {
             <span>Automação assistida</span>
             <h3>A IA interpreta. Sua base comercial decide.</h3>
             <p>Preço, estoque, SKU e aplicação só aparecem quando existem no catálogo da empresa.</p>
-            <Link href="/configuracoes">Configurar automação <ArrowRight size={14}/></Link>
+            <Link prefetch={false} href="/configuracoes">Configurar automação <ArrowRight size={14}/></Link>
           </article>
 
           <article className="crm-surface dashboard-v4-total">
             <span>Valor aceito</span>
             <strong>{money(acceptedValue)}</strong>
             <small>{accepted} orçamento{accepted === 1 ? "" : "s"} convertido{accepted === 1 ? "" : "s"}</small>
-            <Link href="/pedidos"><CircleDollarSign size={15}/> Ver pedidos</Link>
+            <Link prefetch={false} href="/pedidos"><CircleDollarSign size={15}/> Ver pedidos</Link>
           </article>
         </aside>
       </section>

@@ -7,25 +7,31 @@ export type CurrentPrincipal = {
   user_metadata: Record<string, unknown>;
 };
 
+/**
+ * Protected CRM requests are validated by proxy.ts with auth.getClaims().
+ * Here we only read the already-refreshed session cookie to avoid a second
+ * Auth network validation for every Server Component render. Data access is
+ * still authorized by Supabase/Postgres RLS and by get_workspace_bootstrap().
+ */
 async function loadCurrentPrincipal(): Promise<CurrentPrincipal | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
-  const claims = data?.claims as Record<string, unknown> | undefined;
+  const { data, error } = await supabase.auth.getSession();
+  const user = data.session?.user;
 
-  if (error || !claims || typeof claims.sub !== "string") {
+  if (error || !user?.id || !data.session?.access_token) {
     return null;
   }
 
   const metadata =
-    claims.user_metadata &&
-    typeof claims.user_metadata === "object" &&
-    !Array.isArray(claims.user_metadata)
-      ? (claims.user_metadata as Record<string, unknown>)
+    user.user_metadata &&
+    typeof user.user_metadata === "object" &&
+    !Array.isArray(user.user_metadata)
+      ? (user.user_metadata as Record<string, unknown>)
       : {};
 
   return {
-    id: claims.sub,
-    email: typeof claims.email === "string" ? claims.email : null,
+    id: user.id,
+    email: user.email ?? null,
     user_metadata: metadata,
   };
 }
