@@ -1,0 +1,105 @@
+import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth/require-user";
+
+type QuoteItemInput = {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  description?: string;
+  discount?: number;
+};
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as {
+      companyId?: string;
+      customerId?: string;
+      conversationId?: string;
+      notes?: string;
+      items?: QuoteItemInput[];
+    };
+
+    if (!body.companyId || !body.items?.length) {
+      return NextResponse.json(
+        { error: "companyId e items são obrigatórios." },
+        { status: 400 },
+      );
+    }
+
+    const invalid = body.items.some(
+      (item) =>
+        !item.productId ||
+        !Number.isFinite(item.quantity) ||
+        item.quantity <= 0 ||
+        !Number.isFinite(item.unitPrice) ||
+        item.unitPrice < 0,
+    );
+
+    if (invalid) {
+      return NextResponse.json({ error: "Itens inválidos." }, { status: 400 });
+    }
+
+    const { supabase, user } = await requireUser();
+    const subtotal = body.items.reduce(
+      (sum, item) => sum + item.quantity * item.unitPrice,
+      0,
+    );
+    const discount = body.items.reduce(
+      (sum, item) => sum + Math.max(0, item.discount ?? 0),
+      0,
+    );
+    const total = Math.max(0, subtotal - discount);
+
+    const { data: quote, error: quoteError } = await supabase
+      .from("quotes")
+      .insert({
+        company_id: body.companyId,
+        customer_id: body.customerId ?? null,
+        conversation_id: body.conversationId ?? null,
+        status: "draft",
+        subtotal,
+        discount,
+        total,
+        notes: body.notes ?? null,
+        created_by: user.id,
+      })
+      .select("id,number,status,subtotal,discount,total")
+      .single();
+
+    if (quoteError) throw quoteError;
+
+    const productIds = body.items.map((item) => item.productId);
+    const { data: products, error: productError } = await supabase
+      .from("products")
+      .select("id,name")
+      .eq("company_id", body.companyId)
+      .in("id", productIds);
+
+    if (productError) throw productError;
+    const names = new Map((products ?? []).map((product) => [product.id, product.name]));
+
+    const { error: itemsError } = await supabase.from("quote_items").insert(
+      body.items.map((item) => {
+        const itemDiscount = Math.max(0, item.discount ?? 0);
+        return {
+          company_id: body.companyId,
+          quote_id: quote.id,
+          product_id: item.productId,
+          description: item.description ?? names.get(item.productId) ?? "Autopeça",
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          discount: itemDiscount,
+          total: Math.max(0, item.quantity * item.unitPrice - itemDiscount),
+        };
+      }),
+    );
+
+    if (itemsError) throw itemsError;
+
+    return NextResponse.json({ quote }, { status: 201 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro inesperado.";
+    const status = message === "UNAUTHORIZED" ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
