@@ -208,8 +208,30 @@ export async function handleCustomerMessage(
   );
 
   if (decision.decision === "not_found") {
-    const reply =
-      "Não encontrei uma aplicação com segurança no catálogo. Vou deixar esta consulta para revisão de um atendente.";
+    const { data: referenceRows } = await supabase.rpc("search_reference_catalog", {
+      p_query: intent.partName ?? input.message,
+      p_provider: null,
+      p_limit: 5,
+    });
+
+    const references = ((referenceRows ?? []) as Array<{
+      external_code: string;
+      name: string;
+      original_code: string | null;
+      application_text: string | null;
+      provider: string;
+      score: number;
+    }>).filter((item) => Number(item.score) >= 0.18).slice(0, 3);
+
+    const reply = references.length
+      ? [
+          "Não encontrei essa peça com preço/estoque confirmado na loja, mas encontrei referências no catálogo técnico:",
+          ...references.map((item) =>
+            `• ${item.name} — cód. ${item.external_code}${item.original_code ? ` — OEM ${item.original_code}` : ""}${item.application_text ? ` — ${item.application_text}` : ""}`,
+          ),
+          "Posso usar essas referências para o atendente confirmar disponibilidade e valor.",
+        ].join("\n")
+      : "Não encontrei uma aplicação com segurança no catálogo. Vou deixar esta consulta para revisão de um atendente.";
 
     await addMessage(supabase, input.companyId, conversationId, "ai", reply);
     await saveAiInteraction(supabase, {

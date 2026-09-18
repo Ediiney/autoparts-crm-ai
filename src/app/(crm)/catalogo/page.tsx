@@ -7,13 +7,13 @@ import {
   List,
   Package,
   PackagePlus,
-  Search,
   SlidersHorizontal,
   Upload,
 } from "lucide-react";
 import { getWorkspaceContext } from "@/lib/company/workspace-context";
 import { createClient } from "@/lib/supabase/server";
 import { ProductPriceEditor } from "@/components/product-price-editor";
+import { SmartCatalogSearch } from "@/components/smart-catalog-search";
 import styles from "./reference-results.module.css";
 
 type Params={q?:string;view?:"table"|"cards";stock?:"all"|"available"|"low"|"zero";source?:string};
@@ -85,7 +85,7 @@ export default async function CatalogPage({searchParams}:{searchParams:Promise<P
 
     <section className="catalog-workspace-v5">
       <section className="catalog-toolbar-v2">
-        <form className="catalog-search-v2" method="get"><Search size={16}/><input name="q" defaultValue={q} placeholder="Peça, SKU, OEM ou aplicação. Ex.: 11230 D, 51 877 337, pivô, Frontier..."/><input type="hidden" name="view" value={view}/><input type="hidden" name="stock" value={params.stock??"all"}/><input type="hidden" name="source" value={params.source??""}/></form>
+        <SmartCatalogSearch initialQuery={q} view={view} stock={params.stock??"all"} source={params.source??""}/>
         <div className="catalog-filter-v2"><Filter size={14}/><select name="stock" defaultValue={params.stock??"all"} form="catalog-filter-form"><option value="all">Todos os estoques</option><option value="available">Disponível</option><option value="low">Estoque baixo</option><option value="zero">Sem estoque</option></select></div>
         <form id="catalog-filter-form" className="catalog-filter-form-v2" method="get"><input type="hidden" name="q" value={q}/><input type="hidden" name="view" value={view}/><select name="source" defaultValue={params.source??""}><option value="">Todas as fontes</option>{sources.map(source=><option key={source} value={source}>{source}</option>)}</select><button className="button-v2 secondary" type="submit"><SlidersHorizontal size={14}/> Filtrar</button></form>
         <div className="view-toggle-v2"><Link prefetch={false} className={view==="table"?"active":""} href={"/catalogo?q="+encodeURIComponent(q)+"&stock="+(params.stock??"all")+"&source="+encodeURIComponent(params.source??"")+"&view=table"}><List size={15}/></Link><Link prefetch={false} className={view==="cards"?"active":""} href={"/catalogo?q="+encodeURIComponent(q)+"&stock="+(params.stock??"all")+"&source="+encodeURIComponent(params.source??"")+"&view=cards"}><Grid2X2 size={15}/></Link></div>
