@@ -38,46 +38,74 @@ export async function searchCatalog(
   if (rows.length === 0) return [];
 
   const productIds = rows.map((row) => row.product_id);
+  const nowIso = new Date().toISOString();
 
-  const [applicationsResult, pricesResult, inventoryResult] = await Promise.all([
-    supabase
-      .from("vehicle_applications")
-      .select("product_id,vehicle_brand,vehicle_model,year_start,year_end,engine,version,side,axle,position")
-      .eq("company_id", input.companyId)
-      .in("product_id", productIds),
-    supabase
-      .from("product_prices")
-      .select("product_id,price,price_type,valid_from,valid_to")
-      .eq("company_id", input.companyId)
-      .in("product_id", productIds)
-      .lte("valid_from", new Date().toISOString())
-      .order("valid_from", { ascending: false }),
-    supabase
-      .from("product_inventory")
-      .select("product_id,quantity,reserved")
-      .eq("company_id", input.companyId)
-      .in("product_id", productIds),
-  ]);
+  const [applicationsResult, pricesResult, inventoryResult, warehousesResult] =
+    await Promise.all([
+      supabase
+        .from("vehicle_applications")
+        .select("product_id,vehicle_brand,vehicle_model,year_start,year_end,engine,version,side,axle,position")
+        .eq("company_id", input.companyId)
+        .in("product_id", productIds),
+      supabase
+        .from("product_prices")
+        .select("product_id,price,price_type,branch_id,valid_from,valid_to")
+        .eq("company_id", input.companyId)
+        .in("product_id", productIds)
+        .lte("valid_from", nowIso)
+        .order("valid_from", { ascending: false }),
+      supabase
+        .from("product_inventory")
+        .select("product_id,warehouse_id,quantity,reserved")
+        .eq("company_id", input.companyId)
+        .in("product_id", productIds),
+      supabase
+        .from("warehouses")
+        .select("id,branch_id")
+        .eq("company_id", input.companyId)
+        .eq("active", true),
+    ]);
 
   if (applicationsResult.error) throw applicationsResult.error;
   if (pricesResult.error) throw pricesResult.error;
   if (inventoryResult.error) throw inventoryResult.error;
+  if (warehousesResult.error) throw warehousesResult.error;
 
   const applications = (applicationsResult.data ?? []) as ApplicationRow[];
   const priceMap = new Map<string, { price: number; priceType: string }>();
-  const now = Date.now();
+  const pricePriority = new Map<string, number>();
 
   for (const row of pricesResult.data ?? []) {
-    if (priceMap.has(row.product_id)) continue;
-    if (row.valid_to && new Date(row.valid_to).getTime() < now) continue;
+    if (row.valid_to && row.valid_to < nowIso) continue;
+
+    const priority = input.branchId
+      ? row.branch_id === input.branchId
+        ? 2
+        : row.branch_id === null
+          ? 1
+          : 0
+      : row.branch_id === null
+        ? 2
+        : 1;
+
+    if (priority <= (pricePriority.get(row.product_id) ?? -1)) continue;
+
+    pricePriority.set(row.product_id, priority);
     priceMap.set(row.product_id, {
       price: Number(row.price),
       priceType: row.price_type,
     });
   }
 
+  const allowedWarehouses = new Set(
+    (warehousesResult.data ?? [])
+      .filter((warehouse) => !input.branchId || warehouse.branch_id === input.branchId)
+      .map((warehouse) => warehouse.id),
+  );
+
   const stockMap = new Map<string, number>();
   for (const row of inventoryResult.data ?? []) {
+    if (input.branchId && !allowedWarehouses.has(row.warehouse_id)) continue;
     const available = Number(row.quantity) - Number(row.reserved);
     stockMap.set(row.product_id, (stockMap.get(row.product_id) ?? 0) + available);
   }
