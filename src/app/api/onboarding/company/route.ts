@@ -95,14 +95,15 @@ export async function POST(request:Request) {
       .eq("id",company.id);
     if(updateCompanyError) throw updateCompanyError;
 
-    let {data:headquarters,error:branchReadError}=await supabase
+    const branchResult=await supabase
       .from("branches")
       .select("id")
       .eq("company_id",company.id)
       .eq("is_headquarters",true)
       .limit(1)
       .maybeSingle();
-    if(branchReadError) throw branchReadError;
+    if(branchResult.error) throw branchResult.error;
+    let headquarters=branchResult.data;
 
     if(!headquarters) {
       const created=await supabase
