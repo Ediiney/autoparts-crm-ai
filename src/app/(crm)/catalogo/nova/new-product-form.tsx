@@ -91,7 +91,6 @@ export function NewProductForm() {
 
   useEffect(() => {
     if (query.trim().length < 2 || selected) {
-      setResults([]);
       return;
     }
 
@@ -233,8 +232,10 @@ export function NewProductForm() {
           <input
             value={query}
             onChange={(event) => {
+              const nextQuery = event.target.value;
               setSelected(null);
-              setQuery(event.target.value);
+              setQuery(nextQuery);
+              if (nextQuery.trim().length < 2) setResults([]);
             }}
             placeholder="Ex.: 11230 D, 51 877 337, coxim, Grand Siena..."
           />
