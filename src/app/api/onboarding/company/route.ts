@@ -55,8 +55,17 @@ export async function POST(request: Request) {
     });
     if (settingsError) throw settingsError;
 
+    const { data: headquarters } = await supabase
+      .from("branches")
+      .select("id")
+      .eq("company_id", company.id)
+      .eq("is_headquarters", true)
+      .limit(1)
+      .maybeSingle();
+
     const { error: warehouseError } = await supabase.from("warehouses").insert({
       company_id: company.id,
+      branch_id: headquarters?.id ?? null,
       name: "Estoque principal",
       code: "MAIN",
     });
