@@ -1,18 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublicConfig } from "@/lib/supabase/config";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  // Permite publicar a primeira prévia visual antes da configuração
-  // das variáveis de ambiente. Rotas que acessam o banco continuam
-  // exigindo as credenciais reais.
-  if (!url || !publishableKey) {
-    return response;
-  }
+  const { url, publishableKey } = getSupabasePublicConfig();
 
   const supabase = createServerClient(url, publishableKey, {
     cookies: {
