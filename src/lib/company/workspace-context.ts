@@ -1,10 +1,11 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompany } from "./current-company";
 
 const BRANCH_COOKIE = "autoparts_branch";
 
-export async function getWorkspaceContext() {
+async function loadWorkspaceContext() {
   const company = await getCurrentCompany();
   if (!company) return null;
 
@@ -35,7 +36,11 @@ export async function getWorkspaceContext() {
     available[0] ||
     null;
 
-  const timezone = profile?.timezone || branch?.timezone || company.timezone || "America/Sao_Paulo";
+  const timezone =
+    profile?.timezone ||
+    branch?.timezone ||
+    company.timezone ||
+    "America/Sao_Paulo";
 
   return {
     company,
@@ -45,4 +50,5 @@ export async function getWorkspaceContext() {
   };
 }
 
+export const getWorkspaceContext = cache(loadWorkspaceContext);
 export const workspaceBranchCookie = BRANCH_COOKIE;

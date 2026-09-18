@@ -1,17 +1,17 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentPrincipal } from "@/lib/auth/current-principal";
 
-export async function getCurrentCompany() {
+async function loadCurrentCompany() {
+  const principal = await getCurrentPrincipal();
+  if (!principal) return null;
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
 
   const { data: membership } = await supabase
     .from("company_members")
     .select("company_id,branch_id,role")
-    .eq("user_id", user.id)
+    .eq("user_id", principal.id)
     .eq("active", true)
     .limit(1)
     .maybeSingle();
@@ -22,6 +22,7 @@ export async function getCurrentCompany() {
     .from("companies")
     .select("id,name,slug,timezone,currency,business_type")
     .eq("id", membership.company_id)
+    .eq("active", true)
     .maybeSingle();
 
   if (!company) return null;
@@ -30,6 +31,8 @@ export async function getCurrentCompany() {
     ...company,
     role: membership.role,
     memberBranchId: membership.branch_id,
-    user,
+    user: principal,
   };
 }
+
+export const getCurrentCompany = cache(loadCurrentCompany);

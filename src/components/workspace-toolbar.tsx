@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { Building2, ChevronDown, Clock3 } from "lucide-react";
 import { timezoneLabel } from "@/lib/timezones";
 
@@ -13,21 +14,21 @@ export function WorkspaceToolbar({
   branchId?: string;
   timezone: string;
 }) {
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
 
   async function changeBranch(nextBranchId: string) {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/workspace/branch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ branchId: nextBranchId }),
-      });
+    const response = await fetch("/api/workspace/branch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ branchId: nextBranchId }),
+    });
 
-      if (response.ok) window.location.reload();
-    } finally {
-      setLoading(false);
-    }
+    if (!response.ok) return;
+
+    startTransition(() => {
+      router.refresh();
+    });
   }
 
   return (
@@ -37,7 +38,7 @@ export function WorkspaceToolbar({
         <select
           aria-label="Filial atual"
           value={branchId ?? ""}
-          disabled={loading || branches.length < 2}
+          disabled={pending || branches.length < 2}
           onChange={(event) => void changeBranch(event.target.value)}
         >
           {branches.map((branch) => (
