@@ -1721,11 +1721,23 @@ export type Database = {
         }
         Returns: Json
       }
+      get_customers_page: {
+        Args: { p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
       get_dashboard_summary: {
         Args: { p_branch_id?: string; p_today?: string }
         Returns: Json
       }
+      get_quotes_page: {
+        Args: { p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
       get_reports_summary: {
+        Args: { p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
+      get_vehicles_page: {
         Args: { p_branch_id?: string; p_limit?: number }
         Returns: Json
       }
