@@ -82,7 +82,7 @@ export default async function OrcamentosPage() {
                   </td>
                   <td>{date.format(new Date(quote.created_at))}</td>
                   <td>{quote.expires_at ? date.format(new Date(quote.expires_at)) : "—"}</td>
-                  <td><Link className="row-action-v2" href={`/orcamentos/${quote.id}`}>Abrir</Link></td>
+                  <td><Link className="row-action-v2" prefetch={false} href={`/orcamentos/${quote.id}`}>Abrir</Link></td>
                 </tr>
               ))}
             </tbody>
