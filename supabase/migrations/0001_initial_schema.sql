@@ -135,10 +135,37 @@ as $$
   );
 $$;
 
+create or replace function private.has_company_role(p_company_id uuid, p_roles text[])
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select exists (
+    select 1
+    from public.companies c
+    where c.id = p_company_id
+      and c.owner_user_id = (select auth.uid())
+      and 'owner' = any(p_roles)
+      and c.active = true
+  )
+  or exists (
+    select 1
+    from public.company_members cm
+    where cm.company_id = p_company_id
+      and cm.user_id = (select auth.uid())
+      and cm.role = any(p_roles)
+      and cm.active = true
+  );
+$;
+
 revoke all on function private.is_company_member(uuid) from public;
 revoke all on function private.is_company_admin(uuid) from public;
+revoke all on function private.has_company_role(uuid, text[]) from public;
 grant execute on function private.is_company_member(uuid) to authenticated;
 grant execute on function private.is_company_admin(uuid) to authenticated;
+grant execute on function private.has_company_role(uuid, text[]) to authenticated;
 
 create or replace function private.handle_new_user()
 returns trigger
@@ -743,55 +770,85 @@ for all to authenticated
 using (private.is_company_member(company_id))
 with check (private.is_company_member(company_id));
 
-create policy product_categories_company_access on public.product_categories
+create policy product_categories_select on public.product_categories
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy product_categories_write on public.product_categories
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy products_company_access on public.products
+create policy products_select on public.products
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy products_write on public.products
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy product_aliases_company_access on public.product_aliases
+create policy product_aliases_select on public.product_aliases
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy product_aliases_write on public.product_aliases
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy vehicle_applications_company_access on public.vehicle_applications
+create policy vehicle_applications_select on public.vehicle_applications
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy vehicle_applications_write on public.vehicle_applications
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy product_prices_company_access on public.product_prices
+create policy product_prices_select on public.product_prices
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy product_prices_write on public.product_prices
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy warehouses_company_access on public.warehouses
+create policy warehouses_select on public.warehouses
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy warehouses_write on public.warehouses
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy product_inventory_company_access on public.product_inventory
+create policy product_inventory_select on public.product_inventory
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy product_inventory_write on public.product_inventory
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy catalog_sources_company_access on public.catalog_sources
+create policy catalog_sources_select on public.catalog_sources
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy catalog_sources_write on public.catalog_sources
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy catalog_imports_company_access on public.catalog_imports
+create policy catalog_imports_select on public.catalog_imports
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy catalog_imports_write on public.catalog_imports
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
-create policy catalog_import_rows_company_access on public.catalog_import_rows
+create policy catalog_import_rows_select on public.catalog_import_rows
+for select to authenticated
+using (private.is_company_member(company_id));
+create policy catalog_import_rows_write on public.catalog_import_rows
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.has_company_role(company_id, array['owner','admin','manager']))
+with check (private.has_company_role(company_id, array['owner','admin','manager']));
 
 create policy conversations_company_access on public.conversations
 for all to authenticated
@@ -818,10 +875,14 @@ for all to authenticated
 using (private.is_company_member(company_id))
 with check (private.is_company_member(company_id));
 
-create policy company_settings_company_access on public.company_settings
+create policy company_settings_select on public.company_settings
+for select to authenticated
+using (private.is_company_member(company_id));
+
+create policy company_settings_write on public.company_settings
 for all to authenticated
-using (private.is_company_member(company_id))
-with check (private.is_company_member(company_id));
+using (private.is_company_admin(company_id))
+with check (private.is_company_admin(company_id));
 
 create policy audit_logs_company_select on public.audit_logs
 for select to authenticated
@@ -859,6 +920,8 @@ grant select, insert, update, delete on public.quotes to authenticated;
 grant select, insert, update, delete on public.quote_items to authenticated;
 grant select, insert, update, delete on public.company_settings to authenticated;
 grant select, insert on public.audit_logs to authenticated;
+grant usage, select on sequence public.quotes_number_seq to authenticated;
+grant usage, select on sequence public.audit_logs_id_seq to authenticated;
 
 revoke all on public.webhook_events from anon, authenticated;
 
