@@ -18,7 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { WorkspaceToolbar } from "./workspace-toolbar";
+import { WorkspaceToolbar } from "./workspace-toolbar";\nimport { GlobalSearch } from "./global-search";
 
 const navItems = [
   { href: "/dashboard", label: "Visão geral", icon: Gauge },
@@ -130,11 +130,7 @@ export function AppShell({
         <header className="topbar-v2">
           <WorkspaceToolbar branches={branches} branchId={branchId} timezone={timezone} />
           <div className="topbar-v2-actions">
-            <label className="search-v2">
-              <Search size={16} />
-              <input placeholder="Buscar cliente, peça, placa ou orçamento..." />
-              <kbd>⌘ K</kbd>
-            </label>
+            <GlobalSearch />
             <button className="icon-v2" aria-label="Notificações"><Bell size={17}/></button>
           </div>
         </header>
