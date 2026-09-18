@@ -32,7 +32,10 @@ const navItems = [
   { group: "Operação", href: "/estoque", label: "Estoque", icon: Boxes },
   { group: "Gestão", href: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { group: "Gestão", href: "/configuracoes", label: "Configurações", icon: Settings },
-];
+].map((item, index, items) => ({
+  ...item,
+  showGroup: index === 0 || items[index - 1].group !== item.group,
+}));
 
 function initials(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -68,7 +71,6 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  let lastGroup = "";
 
   function warmRoute(href: string) {
     if (href !== pathname) router.prefetch(href);
@@ -80,28 +82,19 @@ export function AppShell({
         <div className="sidebar-v2-head">
           <Link href="/dashboard" prefetch={false} onPointerEnter={() => warmRoute("/dashboard")} className="brand-v2 brand-v3">
             <div className="brand-v2-mark brand-v3-mark"><CarFront size={19} strokeWidth={2.2} /></div>
-            <div>
-              <strong>AutoParts</strong>
-              <span>CRM</span>
-            </div>
+            <div><strong>AutoParts</strong><span>CRM</span></div>
           </Link>
 
           <div className="company-v2 company-v3">
             <div className="company-v2-avatar">{initials(companyName)}</div>
-            <div className="company-v2-copy">
-              <span>Empresa atual</span>
-              <strong>{companyName}</strong>
-            </div>
+            <div className="company-v2-copy"><span>Empresa atual</span><strong>{companyName}</strong></div>
             <ChevronRight size={14} />
           </div>
         </div>
 
         <nav className="nav-v2 nav-v3" aria-label="Navegação principal">
-          {navItems.map(({ group, href, label, icon: Icon, mobile }) => {
-            const showGroup = group !== lastGroup;
-            lastGroup = group;
+          {navItems.map(({ group, href, label, icon: Icon, mobile, showGroup }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
-
             return (
               <Fragment key={href}>
                 {showGroup ? <span className="nav-v3-group">{group}</span> : null}
@@ -127,13 +120,9 @@ export function AppShell({
             <span className="status-v2-dot" />
             <div><strong>Operação online</strong><span>Dados sincronizados</span></div>
           </div>
-
           <div className="user-v2 user-v3">
             <div className="user-v2-avatar">{initials(userName)}</div>
-            <div className="user-v2-copy">
-              <strong>{userName}</strong>
-              <span>{roleLabels[role] ?? role}</span>
-            </div>
+            <div className="user-v2-copy"><strong>{userName}</strong><span>{roleLabels[role] ?? role}</span></div>
             <form action="/api/auth/logout" method="post">
               <button className="user-v2-action" type="submit" aria-label="Sair"><LogOut size={15}/></button>
             </form>
