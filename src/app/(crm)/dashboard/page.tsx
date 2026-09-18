@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/page-header";
+import Link from "next/link";\nimport { PageHeader } from "@/components/page-header";
 import { Avatar, Button, Card, StatusBadge } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompany } from "@/lib/company/current-company";
@@ -145,7 +145,7 @@ export default async function DashboardPage(){
       <div className="dashboard-grid">
         <div className="dashboard-stack">
           <Card>
-            <div className="card-header"><div><h2 className="card-title">Atendimentos recentes</h2><p className="card-subtitle">Conversas mais recentes da sua operação.</p></div><a className="card-link" href="/conversas">Ver inbox</a></div>
+            <div className="card-header"><div><h2 className="card-title">Atendimentos recentes</h2><p className="card-subtitle">Conversas mais recentes da sua operação.</p></div><Link className="card-link" href="/conversas">Ver inbox</Link></div>
             {recentConversations.length ? (
               <div className="activity-list">
                 {recentConversations.map((item) => {
@@ -166,7 +166,7 @@ export default async function DashboardPage(){
           </Card>
 
           <Card>
-            <div className="card-header"><div><h2 className="card-title">Catálogo recente</h2><p className="card-subtitle">Últimos produtos ativos cadastrados.</p></div><a className="card-link" href="/catalogo">Abrir catálogo</a></div>
+            <div className="card-header"><div><h2 className="card-title">Catálogo recente</h2><p className="card-subtitle">Últimos produtos ativos cadastrados.</p></div><Link className="card-link" href="/catalogo">Abrir catálogo</Link></div>
             {products.length ? (
               <div className="table-wrap">
                 <table className="data-table">
