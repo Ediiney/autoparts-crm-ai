@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Itens inválidos." }, { status: 400 });
     }
 
+    const companyId = body.companyId;
     const { supabase, user } = await requireUser();
     const subtotal = body.items.reduce(
       (sum, item) => sum + item.quantity * item.unitPrice,
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     const { data: quote, error: quoteError } = await supabase
       .from("quotes")
       .insert({
-        company_id: body.companyId,
+        company_id: companyId,
         customer_id: body.customerId ?? null,
         conversation_id: body.conversationId ?? null,
         status: "draft",
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     const { data: products, error: productError } = await supabase
       .from("products")
       .select("id,name")
-      .eq("company_id", body.companyId)
+      .eq("company_id", companyId)
       .in("id", productIds);
 
     if (productError) throw productError;
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       body.items.map((item) => {
         const itemDiscount = Math.max(0, item.discount ?? 0);
         return {
-          company_id: body.companyId,
+          company_id: companyId,
           quote_id: quote.id,
           product_id: item.productId,
           description: item.description ?? names.get(item.productId) ?? "Autopeça",
