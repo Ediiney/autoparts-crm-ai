@@ -39,7 +39,7 @@ export default async function VeiculosPage() {
           <h1>Veículos</h1>
           <p>Veículos vinculados à carteira da filial.</p>
         </div>
-        <Link href="/veiculos/novo" className="button-v2 primary">
+        <Link prefetch={false} href="/veiculos/novo" className="button-v2 primary">
           <Plus size={14} /> Adicionar veículo
         </Link>
       </div>
@@ -67,7 +67,7 @@ export default async function VeiculosPage() {
                   <td>{vehicle.transmission || "—"}</td>
                   <td>{vehicle.customer_name || "Cliente"}</td>
                   <td>{vehicle.plate || "—"}</td>
-                  <td><Link className="row-action-v2" href={`/veiculos/${vehicle.id}`}>Detalhes</Link></td>
+                  <td><Link prefetch={false} className="row-action-v2" href={`/veiculos/${vehicle.id}`}>Detalhes</Link></td>
                 </tr>
               ))}
             </tbody>
@@ -78,7 +78,7 @@ export default async function VeiculosPage() {
           <div className="empty-v2-icon"><CarFront size={22} /></div>
           <h2>Nenhum veículo</h2>
           <p>Adicione um veículo para acelerar as consultas de compatibilidade.</p>
-          <Link href="/veiculos/novo" className="button-v2 primary">
+          <Link prefetch={false} href="/veiculos/novo" className="button-v2 primary">
             <Plus size={14} /> Adicionar veículo
           </Link>
         </div>

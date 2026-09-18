@@ -48,7 +48,7 @@ export default async function ClientesPage() {
           <h1>Clientes</h1>
           <p>Carteira, contatos, fusos e histórico comercial.</p>
         </div>
-        <Link href="/clientes/novo" className="button-v2 primary">
+        <Link prefetch={false} href="/clientes/novo" className="button-v2 primary">
           <Plus size={14} /> Novo cliente
         </Link>
       </div>
@@ -81,7 +81,7 @@ export default async function ClientesPage() {
                     </span>
                   </td>
                   <td>
-                    <Link className="row-action-v2" href={`/clientes/${customer.id}`}>
+                    <Link prefetch={false} className="row-action-v2" href={`/clientes/${customer.id}`}>
                       Abrir <MoreHorizontal size={12} />
                     </Link>
                   </td>
@@ -95,7 +95,7 @@ export default async function ClientesPage() {
           <div className="empty-v2-icon"><Users size={22} /></div>
           <h2>Nenhum cliente</h2>
           <p>Cadastre o primeiro cliente para iniciar a carteira.</p>
-          <Link href="/clientes/novo" className="button-v2 primary">
+          <Link prefetch={false} href="/clientes/novo" className="button-v2 primary">
             <Plus size={14} /> Novo cliente
           </Link>
         </div>

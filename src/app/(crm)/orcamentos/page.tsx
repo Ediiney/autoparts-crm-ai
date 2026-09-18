@@ -68,8 +68,8 @@ export default async function OrcamentosPage({
         <p>Propostas, negociação e conversão em pedidos da {workspace.branch?.name??"operação"}.</p>
       </div>
       <div className="page-heading-v2-actions">
-        <Link href="/pedidos" className="button-v2 secondary">Ver pedidos</Link>
-        <Link href="/orcamentos/novo" className="button-v2 primary"><Plus size={14}/> Novo orçamento</Link>
+        <Link prefetch={false} href="/pedidos" className="button-v2 secondary">Ver pedidos</Link>
+        <Link prefetch={false} href="/orcamentos/novo" className="button-v2 primary"><Plus size={14}/> Novo orçamento</Link>
       </div>
     </div>
 
@@ -94,10 +94,10 @@ export default async function OrcamentosPage({
     <section className="commercial-section-v5">
       <div className="commercial-toolbar-v5">
         <div className="commercial-tabs-v5">
-          <Link className={activeTab==="all"?"active":""} href="/orcamentos">Todos <span>{rows.length}</span></Link>
-          <Link className={activeTab==="open"?"active":""} href="/orcamentos?status=open">Em aberto <span>{openRows.length}</span></Link>
-          <Link className={activeTab==="sent"?"active":""} href="/orcamentos?status=sent">Enviados <span>{sentRows.length}</span></Link>
-          <Link className={activeTab==="accepted"?"active":""} href="/orcamentos?status=accepted">Aceitos <span>{acceptedRows.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="all"?"active":""} href="/orcamentos">Todos <span>{rows.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="open"?"active":""} href="/orcamentos?status=open">Em aberto <span>{openRows.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="sent"?"active":""} href="/orcamentos?status=sent">Enviados <span>{sentRows.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="accepted"?"active":""} href="/orcamentos?status=accepted">Aceitos <span>{acceptedRows.length}</span></Link>
         </div>
         <div className="commercial-toolbar-meta-v5">
           <CircleDollarSign size={14}/>
@@ -120,14 +120,14 @@ export default async function OrcamentosPage({
             <td><span className={statusClass(quote.status)}>{labels[quote.status]??quote.status}</span></td>
             <td>{date.format(new Date(quote.created_at))}</td>
             <td>{quote.expires_at?date.format(new Date(quote.expires_at)):"Sem prazo"}</td>
-            <td><Link className="row-action-v2" href={`/orcamentos/${quote.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
+            <td><Link prefetch={false} className="row-action-v2" href={`/orcamentos/${quote.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
           </tr>)}</tbody>
         </table>
       </div>:<div className="empty-v2 commercial-empty-v5">
         <div className="empty-v2-icon"><FileText size={22}/></div>
         <h2>{rows.length?"Nenhum orçamento neste estágio":"Nenhum orçamento ainda"}</h2>
         <p>{rows.length?"Escolha outro estágio comercial.":"Crie a primeira proposta usando os produtos do catálogo."}</p>
-        {!rows.length?<Link href="/orcamentos/novo" className="button-v2 primary"><Plus size={14}/> Novo orçamento</Link>:null}
+        {!rows.length?<Link prefetch={false} href="/orcamentos/novo" className="button-v2 primary"><Plus size={14}/> Novo orçamento</Link>:null}
       </div>}
     </section>
   </div>;

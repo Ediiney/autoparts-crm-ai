@@ -66,8 +66,8 @@ export default async function PedidosPage({
         <p>Venda, separação, pagamento e entrega em um fluxo único.</p>
       </div>
       <div className="page-heading-v2-actions">
-        <Link href="/orcamentos" className="button-v2 secondary">Ver orçamentos</Link>
-        <Link href="/pedidos/novo" className="button-v2 primary"><Plus size={14}/> Novo pedido</Link>
+        <Link prefetch={false} href="/orcamentos" className="button-v2 secondary">Ver orçamentos</Link>
+        <Link prefetch={false} href="/pedidos/novo" className="button-v2 primary"><Plus size={14}/> Novo pedido</Link>
       </div>
     </div>
 
@@ -92,11 +92,11 @@ export default async function PedidosPage({
     <section className="commercial-section-v5">
       <div className="commercial-toolbar-v5">
         <div className="commercial-tabs-v5">
-          <Link className={activeTab==="all"?"active":""} href="/pedidos">Todos <span>{rows.length}</span></Link>
-          <Link className={activeTab==="open"?"active":""} href="/pedidos?status=open">Em andamento <span>{open.length}</span></Link>
-          <Link className={activeTab==="picking"?"active":""} href="/pedidos?status=picking">Separação <span>{picking.length}</span></Link>
-          <Link className={activeTab==="ready"?"active":""} href="/pedidos?status=ready">Prontos <span>{ready.length}</span></Link>
-          <Link className={activeTab==="delivered"?"active":""} href="/pedidos?status=delivered">Entregues <span>{delivered.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="all"?"active":""} href="/pedidos">Todos <span>{rows.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="open"?"active":""} href="/pedidos?status=open">Em andamento <span>{open.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="picking"?"active":""} href="/pedidos?status=picking">Separação <span>{picking.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="ready"?"active":""} href="/pedidos?status=ready">Prontos <span>{ready.length}</span></Link>
+          <Link prefetch={false} className={activeTab==="delivered"?"active":""} href="/pedidos?status=delivered">Entregues <span>{delivered.length}</span></Link>
         </div>
         <div className="commercial-toolbar-meta-v5">
           <Clock3 size={14}/><span>{filtered.length} registros</span>
@@ -119,14 +119,14 @@ export default async function PedidosPage({
             <td><span className={statusClass(order.status)}>{statusLabels[order.status]??order.status}</span></td>
             <td><span className={order.payment_status==="paid"?"commerce-status-v3 success":"commerce-status-v3 neutral"}>{paymentLabels[order.payment_status]??order.payment_status}</span></td>
             <td>{date.format(new Date(order.created_at))}</td>
-            <td><Link className="row-action-v2" href={`/pedidos/${order.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
+            <td><Link prefetch={false} className="row-action-v2" href={`/pedidos/${order.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
           </tr>)}</tbody>
         </table>
       </div>:<div className="empty-v2 commercial-empty-v5">
         <div className="empty-v2-icon"><ShoppingCart size={22}/></div>
         <h2>{rows.length?"Nenhum pedido neste estágio":"Nenhum pedido ainda"}</h2>
         <p>{rows.length?"Escolha outro estágio operacional.":"Converta um orçamento aprovado ou registre uma venda direta."}</p>
-        {!rows.length?<Link href="/pedidos/novo" className="button-v2 primary"><Plus size={14}/> Novo pedido</Link>:null}
+        {!rows.length?<Link prefetch={false} href="/pedidos/novo" className="button-v2 primary"><Plus size={14}/> Novo pedido</Link>:null}
       </div>}
     </section>
   </div>;

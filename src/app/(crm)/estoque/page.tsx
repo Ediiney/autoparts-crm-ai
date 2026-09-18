@@ -46,7 +46,7 @@ export default async function EstoquePage() {
           <h1>Estoque</h1>
           <p>Saldo da {workspace.branch?.name ?? "operação"} com reservas e valor estimado.</p>
         </div>
-        <Link href="/catalogo" className="button-v2 secondary">
+        <Link prefetch={false} href="/catalogo" className="button-v2 secondary">
           <PackageSearch size={14} /> Abrir catálogo
         </Link>
       </div>
@@ -92,7 +92,7 @@ export default async function EstoquePage() {
           <div className="empty-v2-icon"><Boxes size={22} /></div>
           <h2>Sem saldo cadastrado</h2>
           <p>Inclua estoque nos produtos da filial para acompanhar a disponibilidade.</p>
-          <Link href="/catalogo" className="button-v2 primary">Abrir catálogo</Link>
+          <Link prefetch={false} href="/catalogo" className="button-v2 primary">Abrir catálogo</Link>
         </div>
       )}
     </div>
