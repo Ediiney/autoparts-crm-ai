@@ -38,12 +38,7 @@ export default async function ProductDetailPage({params}:{params:Promise<{id:str
 
   const warehouseMap=new Map((warehousesResult.data??[]).map(w=>[w.id,w]));
   const branchId=workspace.branch?.id??null;
-  const now=Date.now();
-  const activePrices=(pricesResult.data??[]).filter(price=>{
-    const starts=new Date(price.valid_from).getTime()<=now;
-    const ends=!price.valid_to||new Date(price.valid_to).getTime()>now;
-    return starts&&ends;
-  });
+  const activePrices=(pricesResult.data??[]).filter(price=>price.valid_to===null);
   const currentPrice=
     activePrices.find(price=>price.branch_id===branchId) ??
     activePrices.find(price=>price.branch_id===null);
