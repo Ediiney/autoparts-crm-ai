@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from "react";\nimport { useRouter } from "next/navigation";
 import { Building2, Check, ChevronRight, PackageSearch, Sparkles, Users } from "lucide-react";
 
-export function OnboardingForm({ defaultEmail = "" }: { defaultEmail?: string }) {
+export function OnboardingForm({ defaultEmail = "" }: { defaultEmail?: string }) {\n  const router = useRouter();
   const [name, setName] = useState("");
   const [document, setDocument] = useState("");
   const [phone, setPhone] = useState("");
@@ -35,7 +35,7 @@ export function OnboardingForm({ defaultEmail = "" }: { defaultEmail?: string })
         return;
       }
 
-      window.location.href = "/dashboard";
+      router.push("/dashboard");\n      router.refresh();
     } catch {
       setError("Falha de conexão. Tente novamente.");
     } finally {
