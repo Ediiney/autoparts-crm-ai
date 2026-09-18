@@ -69,7 +69,7 @@ export default async function CatalogPage({searchParams}:{searchParams:Promise<P
     {filtered.length===0?<div className="empty-v2"><div className="empty-v2-icon"><Package size={22}/></div><h2>Nenhuma peça encontrada</h2><p>Ajuste os filtros ou cadastre um novo produto.</p><Link href="/catalogo/nova" className="button-v2 primary"><PackagePlus size={14}/> Novo produto</Link></div>:view==="cards"?<div className="catalog-card-grid-v2">{filtered.map(product=>{
       const qty=Number(product.available_quantity??0);
       return <article className="product-card-v2" key={product.id}>
-        <Link href={`/catalogo/${product.id}`} prefetch={false} className="product-card-link-v3">
+        <Link href={`/catalogo/${product.id}`} className="product-card-link-v3">
           <div className="product-card-v2-media">{product.image_url?<> {/* eslint-disable-next-line @next/next/no-img-element */}<img src={product.image_url} alt={product.image_alt||product.name} loading="lazy"/></>:<Package size={26}/>}<span className="product-source-v2">{product.source||"manual"}</span></div>
           <div className="product-card-v2-body"><div className="product-card-v2-code">{product.sku}</div><h3>{product.name}</h3><p>{product.application_label||product.category_name||"Aplicação não cadastrada"}</p><div className="product-card-v2-footer"><strong>{money(product.price)}</strong><span className={qty<=0?"stock-v2 zero":qty<8?"stock-v2 low":"stock-v2"}>{qty} un.</span></div></div>
         </Link>
@@ -83,7 +83,7 @@ export default async function CatalogPage({searchParams}:{searchParams:Promise<P
         <td><ProductPriceEditor productId={product.id} price={product.price===null?null:Number(product.price)} cost={product.cost===null?null:Number(product.cost)} source={product.price_source}/></td>
         <td><span className={qty<=0?"stock-v2 zero":qty<8?"stock-v2 low":"stock-v2"}>{qty} un.</span></td>
         <td><span className="source-pill-v2">{product.source||"manual"}</span></td>
-        <td><Link className="row-action-v2" prefetch={false} href={`/catalogo/${product.id}`}>Abrir</Link></td>
+        <td><Link className="row-action-v2" href={`/catalogo/${product.id}`}>Abrir</Link></td>
       </tr>;
     })}</tbody></table></div>}
     </section>
