@@ -1,7 +1,18 @@
-import Link from "next/link";
-import { CarFront, CheckCircle2, LockKeyhole, Sparkles } from "lucide-react";
+import { redirect } from "next/navigation";
+import { CarFront, CheckCircle2, Sparkles } from "lucide-react";
+import { LoginForm } from "./login-form";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompany } from "@/lib/company/current-company";
 
-export default function LoginPage(){
+export default async function LoginPage(){
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    const company = await getCurrentCompany();
+    redirect(company ? "/dashboard" : "/onboarding");
+  }
+
   return (
     <main className="auth-page">
       <section className="auth-showcase">
@@ -20,24 +31,13 @@ export default function LoginPage(){
           <div className="preview-message customer">Quanto está a bandeja do Civic?</div>
           <div className="preview-ai"><Sparkles size={15}/><div><strong>AutoParts AI</strong><p>Qual é o ano do Civic e o lado da peça?</p></div></div>
           <div className="preview-message customer small">2008, esquerda.</div>
-          <div className="preview-result"><span>Match 94%</span><strong>GIA-4721 · R$ 329,90</strong></div>
+          <div className="preview-result"><span>Fluxo seguro</span><strong>Catálogo → preço → resposta</strong></div>
         </div>
       </section>
-
       <section className="auth-form-side">
         <div className="auth-form-card">
           <div className="mobile-auth-brand"><div className="brand-mark"><CarFront size={20}/></div><strong>AutoParts CRM AI</strong></div>
-          <h2>Bem-vindo de volta</h2>
-          <p>Acesse sua central de atendimento.</p>
-          <form>
-            <div className="form-field"><label>E-mail</label><input type="email" placeholder="voce@empresa.com.br"/></div>
-            <div className="form-field"><label>Senha</label><input type="password" placeholder="Sua senha"/></div>
-            <div className="auth-row"><label className="checkbox-label"><input type="checkbox"/> Manter conectado</label><a href="#">Esqueci minha senha</a></div>
-            <Link href="/dashboard" className="button primary auth-submit"><LockKeyhole size={15}/> Entrar no CRM</Link>
-          </form>
-          <div className="auth-divider"><span>ou</span></div>
-          <button className="oauth-button">G <span>Continuar com Google</span></button>
-          <p className="auth-footer">Primeiro acesso? <Link href="/onboarding">Criar empresa</Link></p>
+          <LoginForm />
         </div>
       </section>
     </main>
