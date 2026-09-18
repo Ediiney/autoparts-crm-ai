@@ -119,7 +119,7 @@ export default async function PedidosPage({
             <td><span className={statusClass(order.status)}>{statusLabels[order.status]??order.status}</span></td>
             <td><span className={order.payment_status==="paid"?"commerce-status-v3 success":"commerce-status-v3 neutral"}>{paymentLabels[order.payment_status]??order.payment_status}</span></td>
             <td>{date.format(new Date(order.created_at))}</td>
-            <td><Link prefetch={false} className="row-action-v2" href={`/pedidos/${order.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
+            <td><Link className="row-action-v2" href={`/pedidos/${order.id}`}>Abrir <ArrowUpRight size={12}/></Link></td>
           </tr>)}</tbody>
         </table>
       </div>:<div className="empty-v2 commercial-empty-v5">
