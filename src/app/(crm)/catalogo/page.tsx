@@ -65,7 +65,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const prices=new Map<string,number>();
   const pricePriority=new Map<string,number>();
   for(const row of pricesResult.data??[]){
-    if(row.valid_to && new Date(row.valid_to).getTime()<Date.now()) continue;
+
     const priority=row.branch_id===branchId?2:row.branch_id===null?1:0;
     if(priority>0 && priority>(pricePriority.get(row.product_id)??-1)){
       prices.set(row.product_id,Number(row.price));
