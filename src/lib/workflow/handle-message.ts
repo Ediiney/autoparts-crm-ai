@@ -117,7 +117,22 @@ export async function handleCustomerMessage(
     input.message,
   );
 
-  const intent = await extractPartIntent(input.message);
+  const { data: previousInteraction } = await supabase
+    .from("ai_interactions")
+    .select("part_name,vehicle")
+    .eq("company_id", input.companyId)
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const intent = await extractPartIntent(input.message, {
+    partName: previousInteraction?.part_name ?? undefined,
+    vehicle:
+      previousInteraction?.vehicle && typeof previousInteraction.vehicle === "object"
+        ? previousInteraction.vehicle
+        : undefined,
+  });
 
   if (intent.missingFields.length > 0) {
     const reply = buildClarification(intent);
