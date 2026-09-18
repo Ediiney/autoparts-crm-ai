@@ -19,93 +19,67 @@ type Params = {
   source?: string;
 };
 
-function money(value?: number) {
-  if (value === undefined) return "Sem preço";
-  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(value);
+type CatalogRow = {
+  id: string;
+  sku: string;
+  name: string;
+  brand: string | null;
+  manufacturer: string | null;
+  original_code: string | null;
+  source: string | null;
+  updated_at: string;
+  category_name: string | null;
+  application_label: string | null;
+  price: number | null;
+  available_quantity: number | null;
+  image_url: string | null;
+  image_alt: string | null;
+};
+
+type CatalogPayload = {
+  count?: number;
+  rows?: CatalogRow[];
+  sources?: string[];
+};
+
+function money(value: number | null | undefined) {
+  if (value === null || value === undefined) return "Sem preço";
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(value));
 }
 
-export default async function CatalogPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const workspace=await getWorkspaceContext();
-  if(!workspace) return null;
-  const params=await searchParams;
-  const supabase=await createClient();
-  const q=params.q?.trim()||"";
-  const view=params.view==="cards"?"cards":"table";
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams: Promise<Params>;
+}) {
+  const workspace = await getWorkspaceContext();
+  if (!workspace) return null;
 
-  let productsQuery=supabase
-    .from("products")
-    .select("id,sku,name,brand,manufacturer,original_code,source,category_id,updated_at",{count:"exact"})
-    .eq("company_id",workspace.company.id)
-    .eq("active",true)
-    .order("updated_at",{ascending:false})
-    .limit(80);
+  const params = await searchParams;
+  const supabase = await createClient();
+  const q = params.q?.trim() || "";
+  const view = params.view === "cards" ? "cards" : "table";
 
-  if(q){
-    const safe=q.replaceAll(","," ");
-    productsQuery=productsQuery.or(`name.ilike.%${safe}%,sku.ilike.%${safe}%,original_code.ilike.%${safe}%`);
-  }
-  if(params.source) productsQuery=productsQuery.eq("source",params.source);
+  const { data, error } = await supabase.rpc("get_catalog_page", {
+    p_branch_id: workspace.branch?.id ?? null,
+    p_query: q,
+    p_source: params.source?.trim() || null,
+    p_limit: 80,
+  });
 
-  const {data:products,count}=await productsQuery;
-  const rows=products??[];
-  const ids=rows.map(p=>p.id);
+  if (error) throw error;
 
-  const [pricesResult,inventoryResult,applicationsResult,mediaResult,warehousesResult,categoriesResult]=ids.length
-    ? await Promise.all([
-        supabase.from("product_prices").select("product_id,price,branch_id,valid_from,valid_to").eq("company_id",workspace.company.id).in("product_id",ids).order("valid_from",{ascending:false}),
-        supabase.from("product_inventory").select("product_id,warehouse_id,quantity,reserved").eq("company_id",workspace.company.id).in("product_id",ids),
-        supabase.from("vehicle_applications").select("product_id,vehicle_brand,vehicle_model,year_start,year_end,engine,side,axle").eq("company_id",workspace.company.id).in("product_id",ids),
-        supabase.from("product_media").select("product_id,url,alt_text,is_primary,sort_order").eq("company_id",workspace.company.id).in("product_id",ids).eq("kind","image").order("is_primary",{ascending:false}).order("sort_order"),
-        supabase.from("warehouses").select("id,branch_id").eq("company_id",workspace.company.id).eq("active",true),
-        supabase.from("product_categories").select("id,name").eq("company_id",workspace.company.id),
-      ])
-    : [{data:[]},{data:[]},{data:[]},{data:[]},{data:[]},{data:[]}];
-
-  const branchId=workspace.branch?.id??null;
-  const prices=new Map<string,number>();
-  const pricePriority=new Map<string,number>();
-  for(const row of pricesResult.data??[]){
-
-    const priority=row.branch_id===branchId?2:row.branch_id===null?1:0;
-    if(priority>0 && priority>(pricePriority.get(row.product_id)??-1)){
-      prices.set(row.product_id,Number(row.price));
-      pricePriority.set(row.product_id,priority);
-    }
-  }
-
-  const allowedWarehouseIds=new Set(
-    (warehousesResult.data??[])
-      .filter(w=>!branchId || w.branch_id===branchId)
-      .map(w=>w.id)
-  );
-  const stock=new Map<string,number>();
-  for(const row of inventoryResult.data??[]){
-    if(branchId && !allowedWarehouseIds.has(row.warehouse_id)) continue;
-    stock.set(row.product_id,(stock.get(row.product_id)??0)+Number(row.quantity)-Number(row.reserved));
-  }
-
-  const applications=new Map<string,string>();
-  for(const app of applicationsResult.data??[]){
-    if(applications.has(app.product_id)) continue;
-    const years=app.year_start||app.year_end
-      ? `${app.year_start??""}${app.year_end&&app.year_end!==app.year_start?`–${app.year_end}`:""}`
-      : "";
-    applications.set(app.product_id,[app.vehicle_brand,app.vehicle_model,years,app.engine].filter(Boolean).join(" · "));
-  }
-
-  const media=new Map<string,{url:string;alt:string|null}>();
-  for(const item of mediaResult.data??[]){
-    if(!media.has(item.product_id)) media.set(item.product_id,{url:item.url,alt:item.alt_text});
-  }
-
-  const categories=new Map((categoriesResult.data??[]).map(item=>[item.id,item.name]));
-  const sourceOptions=[...new Set(rows.map(item=>item.source).filter(Boolean))] as string[];
-
-  const filtered=rows.filter(product=>{
-    const qty=stock.get(product.id)??0;
-    if(params.stock==="available") return qty>0;
-    if(params.stock==="low") return qty>0&&qty<8;
-    if(params.stock==="zero") return qty<=0;
+  const payload = (data ?? {}) as unknown as CatalogPayload;
+  const rows = payload.rows ?? [];
+  const sources = payload.sources ?? [];
+  const filtered = rows.filter((product) => {
+    const qty = Number(product.available_quantity ?? 0);
+    if (params.stock === "available") return qty > 0;
+    if (params.stock === "low") return qty > 0 && qty < 8;
+    if (params.stock === "zero") return qty <= 0;
     return true;
   });
 
@@ -118,21 +92,35 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
           <p>Base operacional para busca, compatibilidade, preço e disponibilidade.</p>
         </div>
         <div className="page-heading-v2-actions">
-          <Link className="button-v2 secondary" href="/catalogo/importar"><Upload size={14}/> Importar</Link>
-          <Link className="button-v2 primary" href="/catalogo/nova"><PackagePlus size={14}/> Nova peça</Link>
+          <Link className="button-v2 secondary" href="/catalogo/importar">
+            <Upload size={14} /> Importar
+          </Link>
+          <Link className="button-v2 primary" href="/catalogo/nova">
+            <PackagePlus size={14} /> Nova peça
+          </Link>
         </div>
       </div>
 
       <section className="catalog-toolbar-v2">
         <form className="catalog-search-v2" method="get">
-          <Search size={16}/>
-          <input name="q" defaultValue={q} placeholder="Buscar por peça, SKU ou código original"/>
-          <input type="hidden" name="view" value={view}/>
+          <Search size={16} />
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Buscar por peça, SKU ou código original"
+          />
+          <input type="hidden" name="view" value={view} />
+          <input type="hidden" name="stock" value={params.stock ?? "all"} />
+          <input type="hidden" name="source" value={params.source ?? ""} />
         </form>
 
         <div className="catalog-filter-v2">
-          <Filter size={14}/>
-          <select name="stock" defaultValue={params.stock??"all"} form="catalog-filter-form">
+          <Filter size={14} />
+          <select
+            name="stock"
+            defaultValue={params.stock ?? "all"}
+            form="catalog-filter-form"
+          >
             <option value="all">Todos os estoques</option>
             <option value="available">Disponível</option>
             <option value="low">Estoque baixo</option>
@@ -141,51 +129,76 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
         </div>
 
         <form id="catalog-filter-form" className="catalog-filter-form-v2" method="get">
-          <input type="hidden" name="q" value={q}/>
-          <input type="hidden" name="view" value={view}/>
-          <select name="source" defaultValue={params.source??""}>
+          <input type="hidden" name="q" value={q} />
+          <input type="hidden" name="view" value={view} />
+          <select name="source" defaultValue={params.source ?? ""}>
             <option value="">Todas as fontes</option>
-            {sourceOptions.map(source=><option key={source} value={source}>{source}</option>)}
+            {sources.map((source) => (
+              <option key={source} value={source}>
+                {source}
+              </option>
+            ))}
           </select>
-          <button className="button-v2 secondary" type="submit"><SlidersHorizontal size={14}/> Aplicar</button>
+          <button className="button-v2 secondary" type="submit">
+            <SlidersHorizontal size={14} /> Aplicar
+          </button>
         </form>
 
         <div className="view-toggle-v2">
-          <Link className={view==="table"?"active":""} href={`/catalogo?q=${encodeURIComponent(q)}&stock=${params.stock??"all"}&source=${params.source??""}&view=table`}><List size={15}/></Link>
-          <Link className={view==="cards"?"active":""} href={`/catalogo?q=${encodeURIComponent(q)}&stock=${params.stock??"all"}&source=${params.source??""}&view=cards`}><Grid2X2 size={15}/></Link>
+          <Link
+            className={view === "table" ? "active" : ""}
+            href={`/catalogo?q=${encodeURIComponent(q)}&stock=${params.stock ?? "all"}&source=${encodeURIComponent(params.source ?? "")}&view=table`}
+          >
+            <List size={15} />
+          </Link>
+          <Link
+            className={view === "cards" ? "active" : ""}
+            href={`/catalogo?q=${encodeURIComponent(q)}&stock=${params.stock ?? "all"}&source=${encodeURIComponent(params.source ?? "")}&view=cards`}
+          >
+            <Grid2X2 size={15} />
+          </Link>
         </div>
       </section>
 
       <div className="catalog-summary-v2">
-        <span><strong>{count??0}</strong> produtos ativos</span>
+        <span><strong>{payload.count ?? 0}</strong> produtos ativos</span>
         <span>{workspace.branch ? `Estoque: ${workspace.branch.name}` : "Estoque consolidado"}</span>
       </div>
 
-      {filtered.length===0 ? (
+      {filtered.length === 0 ? (
         <div className="empty-v2">
-          <div className="empty-v2-icon"><Package size={22}/></div>
+          <div className="empty-v2-icon"><Package size={22} /></div>
           <h2>Nenhuma peça encontrada</h2>
           <p>Ajuste os filtros ou cadastre um novo produto.</p>
-          <Link href="/catalogo/nova" className="button-v2 primary"><PackagePlus size={14}/> Nova peça</Link>
+          <Link href="/catalogo/nova" className="button-v2 primary">
+            <PackagePlus size={14} /> Nova peça
+          </Link>
         </div>
-      ) : view==="cards" ? (
+      ) : view === "cards" ? (
         <div className="catalog-card-grid-v2">
-          {filtered.map(product=>{
-            const qty=stock.get(product.id)??0;
-            const image=media.get(product.id);
+          {filtered.map((product) => {
+            const qty = Number(product.available_quantity ?? 0);
             return (
               <Link href={`/catalogo/${product.id}`} className="product-card-v2" key={product.id}>
                 <div className="product-card-v2-media">
-                  {image ? <img src={image.url} alt={image.alt||product.name}/> : <Package size={26}/>}
-                  <span className="product-source-v2">{product.source||"manual"}</span>
+                  {product.image_url ? (
+                    // Remote catalog media can come from company-managed providers.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={product.image_url} alt={product.image_alt || product.name} loading="lazy" />
+                  ) : (
+                    <Package size={26} />
+                  )}
+                  <span className="product-source-v2">{product.source || "manual"}</span>
                 </div>
                 <div className="product-card-v2-body">
                   <div className="product-card-v2-code">{product.sku}</div>
                   <h3>{product.name}</h3>
-                  <p>{applications.get(product.id)||categories.get(product.category_id??"")||"Aplicação não cadastrada"}</p>
+                  <p>{product.application_label || product.category_name || "Aplicação não cadastrada"}</p>
                   <div className="product-card-v2-footer">
-                    <strong>{money(prices.get(product.id))}</strong>
-                    <span className={qty<=0?"stock-v2 zero":qty<8?"stock-v2 low":"stock-v2"}>{qty} un.</span>
+                    <strong>{money(product.price)}</strong>
+                    <span className={qty <= 0 ? "stock-v2 zero" : qty < 8 ? "stock-v2 low" : "stock-v2"}>
+                      {qty} un.
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -195,23 +208,43 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
       ) : (
         <div className="table-v2-wrap">
           <table className="table-v2">
-            <thead><tr><th>Produto</th><th>SKU / original</th><th>Aplicação</th><th>Preço</th><th>Disponível</th><th>Origem</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>SKU / original</th>
+                <th>Aplicação</th>
+                <th>Preço</th>
+                <th>Disponível</th>
+                <th>Origem</th>
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
-              {filtered.map(product=>{
-                const qty=stock.get(product.id)??0;
+              {filtered.map((product) => {
+                const qty = Number(product.available_quantity ?? 0);
                 return (
                   <tr key={product.id}>
                     <td>
                       <div className="product-cell-v2">
-                        <div className="product-cell-v2-icon"><Package size={16}/></div>
-                        <div><strong>{product.name}</strong><span>{categories.get(product.category_id??"")||product.brand||product.manufacturer||"Sem categoria"}</span></div>
+                        <div className="product-cell-v2-icon"><Package size={16} /></div>
+                        <div>
+                          <strong>{product.name}</strong>
+                          <span>{product.category_name || product.brand || product.manufacturer || "Sem categoria"}</span>
+                        </div>
                       </div>
                     </td>
-                    <td><strong>{product.sku}</strong><span className="table-v2-muted">{product.original_code||"—"}</span></td>
-                    <td>{applications.get(product.id)||"Sem aplicação"}</td>
-                    <td className="price-v2">{money(prices.get(product.id))}</td>
-                    <td><span className={qty<=0?"stock-v2 zero":qty<8?"stock-v2 low":"stock-v2"}>{qty} un.</span></td>
-                    <td><span className="source-pill-v2">{product.source||"manual"}</span></td>
+                    <td>
+                      <strong>{product.sku}</strong>
+                      <span className="table-v2-muted">{product.original_code || "—"}</span>
+                    </td>
+                    <td>{product.application_label || "Sem aplicação"}</td>
+                    <td className="price-v2">{money(product.price)}</td>
+                    <td>
+                      <span className={qty <= 0 ? "stock-v2 zero" : qty < 8 ? "stock-v2 low" : "stock-v2"}>
+                        {qty} un.
+                      </span>
+                    </td>
+                    <td><span className="source-pill-v2">{product.source || "manual"}</span></td>
                     <td><Link className="row-action-v2" href={`/catalogo/${product.id}`}>Detalhes</Link></td>
                   </tr>
                 );
