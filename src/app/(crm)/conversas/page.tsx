@@ -146,6 +146,7 @@ export default async function ConversasPage({
               {rows.map((conversation) => (
                 <Link
                   href={`/conversas?id=${conversation.id}`}
+                  prefetch={false}
                   className={conversation.id === activeId ? "conversation-card active" : "conversation-card"}
                   key={conversation.id}
                   style={{ textDecoration: "none" }}
