@@ -1750,6 +1750,10 @@ export type Database = {
         Returns: Json
       }
       get_workspace_bootstrap: { Args: never; Returns: Json }
+      global_search: {
+        Args: { p_branch_id?: string; p_limit?: number; p_query: string }
+        Returns: Json
+      }
       next_company_quote_number: {
         Args: { p_company_id: string }
         Returns: number
