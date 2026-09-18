@@ -1,19 +1,20 @@
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { getCurrentPrincipal } from "@/lib/auth/current-principal";
 import { getWorkspaceContext } from "@/lib/company/workspace-context";
 
 export default async function CrmLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const workspace = await getWorkspaceContext();
+  const principal = await getCurrentPrincipal();
+  if (!principal) redirect("/login");
 
-  if (!workspace) {
-    redirect("/onboarding");
-  }
+  const workspace = await getWorkspaceContext();
+  if (!workspace) redirect("/onboarding");
 
   const userName =
-    (workspace.company.user.user_metadata.full_name as string | undefined) ||
-    workspace.company.user.email?.split("@")[0] ||
+    (principal.user_metadata.full_name as string | undefined) ||
+    principal.email?.split("@")[0] ||
     "Usuário";
 
   return (
