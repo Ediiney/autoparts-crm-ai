@@ -13,12 +13,12 @@ import {
   LogOut,
   MessageSquareText,
   PackageSearch,
-  Search,
   Settings,
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { WorkspaceToolbar } from "./workspace-toolbar";\nimport { GlobalSearch } from "./global-search";
+import { WorkspaceToolbar } from "./workspace-toolbar";
+import { GlobalSearch } from "./global-search";
 
 const navItems = [
   { href: "/dashboard", label: "Visão geral", icon: Gauge },
