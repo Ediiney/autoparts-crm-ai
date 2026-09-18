@@ -80,7 +80,6 @@ export function AppShell({
 
   return (
     <>
-
       <style jsx global>{`
         .crm-shell{min-height:100vh;display:grid;grid-template-columns:258px minmax(0,1fr);background:#f6f7f9}
         .crm-sidebar{height:100vh;position:sticky;top:0;display:flex;flex-direction:column;background:#111827;color:#d0d5dd;padding:16px 14px 14px;z-index:40;border-right:1px solid #1f2937}
@@ -93,82 +92,88 @@ export function AppShell({
         .crm-sidebar-bottom{margin-top:auto}
         @media(max-width:820px){.crm-shell{display:block}.crm-sidebar{position:fixed;left:0;right:0;top:auto;bottom:0;width:100%;height:68px;padding:6px;z-index:60}.crm-main{padding-bottom:68px}.crm-content{padding:18px 14px 36px}}
       `}</style>
+
       <div className="crm-shell">
-      <aside className="crm-sidebar">
-        <div className="crm-sidebar-top">
-          <Link className="crm-brand" href="/dashboard" onPointerEnter={() => warmRoute("/dashboard")}>
-            <span className="crm-brand-mark"><CarFront size={19} strokeWidth={2.2} /></span>
-            <span className="crm-brand-copy"><strong>AutoParts</strong><small>CRM</small></span>
-          </Link>
+        <aside className="crm-sidebar">
+          <div className="crm-sidebar-top">
+            <Link
+              prefetch={false}
+              className="crm-brand"
+              href="/dashboard"
+              onPointerEnter={() => warmRoute("/dashboard")}
+              onFocus={() => warmRoute("/dashboard")}
+            >
+              <span className="crm-brand-mark"><CarFront size={19} strokeWidth={2.2} /></span>
+              <span className="crm-brand-copy"><strong>AutoParts</strong><small>CRM</small></span>
+            </Link>
 
-          <div className="crm-workspace-card">
-            <div className="crm-workspace-avatar">{initials(companyName)}</div>
-            <div className="crm-workspace-copy">
-              <small>Workspace</small>
-              <strong>{companyName}</strong>
+            <div className="crm-workspace-card">
+              <div className="crm-workspace-avatar">{initials(companyName)}</div>
+              <div className="crm-workspace-copy">
+                <small>Workspace</small>
+                <strong>{companyName}</strong>
+              </div>
+              <ChevronRight size={15} />
             </div>
-            <ChevronRight size={15} />
-          </div>
-        </div>
-
-        <nav className="crm-nav" aria-label="Navegação principal">
-          {navItems.map(({ section, href, label, icon: Icon, mobile, showSection }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Fragment key={href}>
-                {showSection ? <span className="crm-nav-section">{section}</span> : null}
-                <Link
-                  className={active ? "crm-nav-item active" : "crm-nav-item"}
-                  href={href}
-                 
-                  data-mobile={mobile ? "true" : "false"}
-                  onPointerEnter={() => warmRoute(href)}
-                  onMouseEnter={() => warmRoute(href)}
-                  onTouchStart={() => warmRoute(href)}
-                  onFocus={() => warmRoute(href)}
-                  onClick={() => { if (href !== pathname) setPendingPath(href); }}
-                >
-                  <Icon size={18} strokeWidth={1.8} />
-                  <span>{label}</span>
-                  {active ? <i /> : null}
-                </Link>
-              </Fragment>
-            );
-          })}
-        </nav>
-
-        <div className="crm-sidebar-bottom">
-          <div className="crm-live-status">
-            <span />
-            <div><strong>Operação online</strong><small>Serviços conectados</small></div>
           </div>
 
-          <div className="crm-user-card">
-            <div className="crm-user-avatar">{initials(userName)}</div>
-            <div className="crm-user-copy">
-              <strong>{userName}</strong>
-              <small>{roleLabels[role] ?? role}</small>
+          <nav className="crm-nav" aria-label="Navegação principal">
+            {navItems.map(({ section, href, label, icon: Icon, mobile, showSection }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Fragment key={href}>
+                  {showSection ? <span className="crm-nav-section">{section}</span> : null}
+                  <Link
+                    prefetch={false}
+                    className={active ? "crm-nav-item active" : "crm-nav-item"}
+                    href={href}
+                    data-mobile={mobile ? "true" : "false"}
+                    onPointerEnter={() => warmRoute(href)}
+                    onTouchStart={() => warmRoute(href)}
+                    onFocus={() => warmRoute(href)}
+                    onClick={() => { if (href !== pathname) setPendingPath(href); }}
+                  >
+                    <Icon size={18} strokeWidth={1.8} />
+                    <span>{label}</span>
+                    {active ? <i /> : null}
+                  </Link>
+                </Fragment>
+              );
+            })}
+          </nav>
+
+          <div className="crm-sidebar-bottom">
+            <div className="crm-live-status">
+              <span />
+              <div><strong>Operação online</strong><small>Serviços conectados</small></div>
             </div>
-            <form action="/api/auth/logout" method="post">
-              <button type="submit" aria-label="Sair"><LogOut size={16} /></button>
-            </form>
-          </div>
-        </div>
-      </aside>
 
-      <main className="crm-main" aria-busy={isNavigating}>
-        <div className={isNavigating ? "crm-route-progress active" : "crm-route-progress"} aria-hidden="true"><span /></div>
-        <header className="crm-topbar">
-          <div className="crm-topbar-context">
-            <WorkspaceToolbar branches={branches} branchId={branchId} timezone={timezone} />
+            <div className="crm-user-card">
+              <div className="crm-user-avatar">{initials(userName)}</div>
+              <div className="crm-user-copy">
+                <strong>{userName}</strong>
+                <small>{roleLabels[role] ?? role}</small>
+              </div>
+              <form action="/api/auth/logout" method="post">
+                <button type="submit" aria-label="Sair"><LogOut size={16} /></button>
+              </form>
+            </div>
           </div>
-          <div className="crm-topbar-actions">
-            <GlobalSearch />
-            <button className="crm-icon-button" aria-label="Notificações"><Bell size={18} /><span /></button>
-          </div>
-        </header>
-        <div className="crm-content">{children}</div>
-      </main>
+        </aside>
+
+        <main className="crm-main" aria-busy={isNavigating}>
+          <div className={isNavigating ? "crm-route-progress active" : "crm-route-progress"} aria-hidden="true"><span /></div>
+          <header className="crm-topbar">
+            <div className="crm-topbar-context">
+              <WorkspaceToolbar branches={branches} branchId={branchId} timezone={timezone} />
+            </div>
+            <div className="crm-topbar-actions">
+              <GlobalSearch />
+              <button className="crm-icon-button" aria-label="Notificações"><Bell size={18} /><span /></button>
+            </div>
+          </header>
+          <div className="crm-content">{children}</div>
+        </main>
       </div>
     </>
   );
