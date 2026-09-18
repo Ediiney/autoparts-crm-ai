@@ -1,86 +1,200 @@
+import Link from "next/link";
 import { Avatar, Button, StatusBadge } from "@/components/ui";
-import { Bot, CarFront, FileText, MoreHorizontal, Paperclip, Phone, Send, Sparkles, UserRound, Wrench } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompany } from "@/lib/company/current-company";
+import {
+  Bot,
+  CarFront,
+  FileText,
+  MessageCircleMore,
+  MoreHorizontal,
+  Phone,
+  Sparkles,
+  UserRound,
+  Wrench,
+} from "lucide-react";
 
-const conversations=[
-  ["JS","João Silva","Quanto está a bandeja do Civic?","10:42","2","green"],
-  ["MO","Marcos Oficina","É o Onix 2020, motor 1.0.","10:35","","blue"],
-  ["CL","Carlos Lima","Tem homocinética Corolla 2015?","10:18","1","purple"],
-  ["RF","Rafael Freitas","Pode mandar o orçamento.","09:54","","amber"],
-  ["AM","Auto Mecânica Sul","Preciso de 4 bieletas do Polo.","09:37","","slate"],
-];
+const statusLabel: Record<string, string> = {
+  open: "Aberto",
+  waiting_customer: "Aguardando cliente",
+  waiting_agent: "Atendimento humano",
+  resolved: "Resolvido",
+  cancelled: "Cancelado",
+};
 
-export default function ConversasPage(){
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.length > 1
+    ? (parts[0][0] + parts.at(-1)![0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+}
+
+function tone(status: string): "neutral" | "success" | "warning" | "danger" | "info" | "purple" {
+  if (status === "waiting_customer") return "warning";
+  if (status === "waiting_agent") return "purple";
+  if (status === "resolved") return "success";
+  if (status === "cancelled") return "danger";
+  return "info";
+}
+
+function time(value: string | null) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+export default async function ConversasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const company = await getCurrentCompany();
+  if (!company) return null;
+
+  const supabase = await createClient();
+  const { data: conversations } = await supabase
+    .from("conversations")
+    .select("id,customer_id,channel,status,last_message_at,created_at")
+    .eq("company_id", company.id)
+    .order("last_message_at", { ascending: false, nullsFirst: false })
+    .limit(40);
+
+  const rows = conversations ?? [];
+  const params = await searchParams;
+  const activeId = rows.some((item) => item.id === params.id)
+    ? params.id!
+    : rows[0]?.id;
+
+  const customerIds = [...new Set(rows.map((item) => item.customer_id).filter((id): id is string => Boolean(id)))];
+  const { data: customers } = customerIds.length
+    ? await supabase.from("customers").select("id,name,phone,whatsapp,email,created_at").eq("company_id", company.id).in("id", customerIds)
+    : { data: [] as Array<{ id: string; name: string; phone: string | null; whatsapp: string | null; email: string | null; created_at: string }> };
+
+  const customerMap = new Map((customers ?? []).map((customer) => [customer.id, customer]));
+  const activeConversation = rows.find((item) => item.id === activeId);
+  const activeCustomer = activeConversation?.customer_id
+    ? customerMap.get(activeConversation.customer_id)
+    : undefined;
+
+  const [{ data: messages }, { data: aiInteraction }, { data: vehicles }] = activeId
+    ? await Promise.all([
+        supabase.from("conversation_messages").select("id,sender_type,content,created_at").eq("company_id", company.id).eq("conversation_id", activeId).order("created_at", { ascending: true }),
+        supabase.from("ai_interactions").select("part_name,vehicle,confidence,decision,missing_fields,created_at").eq("company_id", company.id).eq("conversation_id", activeId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        activeCustomer
+          ? supabase.from("customer_vehicles").select("id,brand,model,year,model_year,engine,version,transmission,plate").eq("company_id", company.id).eq("customer_id", activeCustomer.id).order("updated_at", { ascending: false }).limit(1)
+          : Promise.resolve({ data: [], error: null }),
+      ])
+    : [{ data: [] }, { data: null }, { data: [] }];
+
+  const vehicle = vehicles?.[0];
+  const aiVehicle =
+    aiInteraction?.vehicle && typeof aiInteraction.vehicle === "object" && !Array.isArray(aiInteraction.vehicle)
+      ? aiInteraction.vehicle as Record<string, unknown>
+      : {};
+
   return (
     <>
       <div className="page-header">
-        <div><div className="eyebrow">Central de atendimento</div><h1>Conversas</h1><p>Inbox unificada com IA, clientes e atendentes humanos.</p></div>
-        <div className="page-actions"><Button variant="secondary" icon={<UserRound size={15}/>}>Fila humana</Button><Button icon={<Send size={15}/>}>Novo atendimento</Button></div>
+        <div><div className="eyebrow">Central de atendimento</div><h1>Conversas</h1><p>Inbox unificada com histórico real do CRM e análise da IA.</p></div>
+        <div className="page-actions"><Button variant="secondary" icon={<UserRound size={15}/>}>Fila humana</Button></div>
       </div>
 
-      <div className="inbox-layout">
-        <aside className="inbox-sidebar">
-          <div className="inbox-sidebar-header">
-            <h2>Caixa de entrada</h2>
-            <div className="inbox-tabs"><button className="inbox-tab active">Todas 24</button><button className="inbox-tab">IA 9</button><button className="inbox-tab">Humanas 4</button></div>
-          </div>
-          <div className="conversation-list">
-            {conversations.map(([initials,name,message,time,unread,tone],idx)=>(
-              <div className={idx===0?"conversation-card active":"conversation-card"} key={name}>
-                <Avatar initials={initials} tone={tone}/>
-                <div className="conversation-copy">
-                  <div className="conversation-name"><strong>{name}</strong>{idx===0?<StatusBadge tone="warning">Aguardando</StatusBadge>:null}</div>
-                  <div className="conversation-message">{message}</div>
-                </div>
-                <div className="conversation-meta"><time>{time}</time>{unread?<span className="unread">{unread}</span>:null}</div>
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        <section className="chat-panel">
-          <header className="chat-header">
-            <div className="chat-contact"><Avatar initials="JS" tone="green"/><div><strong>João Silva</strong><span>WhatsApp · online há 2 min</span></div></div>
-            <div className="chat-actions"><button className="icon-button"><Phone size={16}/></button><button className="icon-button"><MoreHorizontal size={17}/></button></div>
-          </header>
-
-          <div className="chat-body">
-            <div className="chat-day">Hoje, 10:37</div>
-            <div className="message-row customer"><div className="message-bubble">Bom dia! Quanto está a bandeja do Civic?<small>10:37</small></div></div>
-            <div className="ai-note"><Sparkles size={16}/><div><strong>IA identificou uma intenção de compra</strong><p>Peça provável: bandeja de suspensão · Veículo: Honda Civic · Dados faltantes: ano e lado.</p></div></div>
-            <div className="message-row ai"><div className="message-bubble">Bom dia! Para eu localizar a bandeja correta, qual é o ano do seu Civic? Se souber, me diga também se é lado esquerdo ou direito.<small>10:37 · IA</small></div></div>
-            <div className="message-row customer"><div className="message-bubble">É 2008.<small>10:40</small></div></div>
-            <div className="message-row ai"><div className="message-bubble">Perfeito. Encontrei duas aplicações para o Civic 2008. Você precisa da bandeja esquerda ou direita?<small>10:40 · IA</small></div></div>
-            <div className="message-row customer"><div className="message-bubble">Esquerda.<small>10:42</small></div></div>
-            <div className="ai-note"><Bot size={16}/><div><strong>Match encontrado com 94% de confiança</strong><p>Bandeja de suspensão · GIA-4721 · Civic 2007–2011 · dianteira esquerda · R$ 329,90 · 18 em estoque.</p></div></div>
-            <div className="message-row ai"><div className="message-bubble">Encontrei: Bandeja de suspensão dianteira esquerda, código GIA-4721, compatível com Honda Civic 2007 a 2011. Valor: <strong>R$ 329,90</strong>. Temos disponibilidade em estoque.<small>10:42 · IA</small></div></div>
-          </div>
-
-          <div className="chat-composer">
-            <div className="composer-box">
-              <textarea placeholder="Digite uma mensagem..."/>
-              <div className="composer-actions"><div className="composer-left"><button className="icon-button"><Paperclip size={15}/></button><Button variant="ghost" icon={<FileText size={14}/>}>Orçamento</Button></div><Button icon={<Send size={14}/>}>Enviar</Button></div>
+      {rows.length ? (
+        <div className="inbox-layout">
+          <aside className="inbox-sidebar">
+            <div className="inbox-sidebar-header">
+              <h2>Caixa de entrada</h2>
+              <div className="inbox-tabs"><button className="inbox-tab active">Todas {rows.length}</button></div>
             </div>
-          </div>
-        </section>
+            <div className="conversation-list">
+              {rows.map((conversation)=>{
+                const customer = conversation.customer_id ? customerMap.get(conversation.customer_id) : undefined;
+                const name = customer?.name ?? "Cliente";
+                return (
+                  <Link href={`/conversas?id=${conversation.id}`} className={conversation.id===activeId?"conversation-card active":"conversation-card"} key={conversation.id} style={{textDecoration:"none"}}>
+                    <Avatar initials={initials(name)} tone={conversation.status==="waiting_agent"?"purple":conversation.status==="waiting_customer"?"amber":"green"}/>
+                    <div className="conversation-copy">
+                      <div className="conversation-name"><strong>{name}</strong></div>
+                      <div className="conversation-message">{statusLabel[conversation.status] ?? conversation.status}</div>
+                    </div>
+                    <div className="conversation-meta"><time>{time(conversation.last_message_at || conversation.created_at)}</time></div>
+                  </Link>
+                );
+              })}
+            </div>
+          </aside>
 
-        <aside className="contact-panel">
-          <div className="contact-profile"><Avatar initials="JS" tone="green"/><h3>João Silva</h3><p>Cliente desde set/2026</p><StatusBadge tone="success">Cliente ativo</StatusBadge></div>
-          <div className="info-section">
-            <div className="info-section-title"><strong>Contato</strong></div>
-            <div className="info-row"><span>WhatsApp</span><strong>(11) 99999-1248</strong></div>
-            <div className="info-row"><span>E-mail</span><strong>joao@email.com</strong></div>
-          </div>
-          <div className="info-section">
-            <div className="info-section-title"><strong>Veículo</strong><CarFront size={14}/></div>
-            <div className="vehicle-card"><strong>Honda Civic LXS</strong><span>2008 · 1.8 Flex · Manual</span><div style={{marginTop:7}}><StatusBadge tone="neutral">Sem placa cadastrada</StatusBadge></div></div>
-          </div>
-          <div className="info-section">
-            <div className="info-section-title"><strong>Análise da IA</strong><Sparkles size={14}/></div>
-            <div className="ai-analysis"><div className="analysis-title"><Bot size={14}/> Compatibilidade provável</div><div className="info-row"><span>Peça</span><strong>Bandeja</strong></div><div className="info-row"><span>Lado</span><strong>Esquerdo</strong></div><div className="info-row"><span>Confiança</span><strong>94%</strong></div><div className="confidence"><div/></div></div>
-          </div>
-          <div className="info-section"><Button variant="secondary" icon={<Wrench size={14}/>}>Assumir atendimento</Button></div>
-        </aside>
-      </div>
+          <section className="chat-panel">
+            <header className="chat-header">
+              <div className="chat-contact"><Avatar initials={initials(activeCustomer?.name ?? "Cliente")} tone="green"/><div><strong>{activeCustomer?.name ?? "Cliente"}</strong><span>{activeConversation?.channel ?? "web"} · {statusLabel[activeConversation?.status ?? "open"]}</span></div></div>
+              <div className="chat-actions"><button className="icon-button"><Phone size={16}/></button><button className="icon-button"><MoreHorizontal size={17}/></button></div>
+            </header>
+
+            <div className="chat-body">
+              <div className="chat-day">Histórico do atendimento</div>
+              {(messages ?? []).length ? (messages ?? []).map((message)=>(
+                <div className={`message-row ${message.sender_type === "customer" ? "customer" : message.sender_type === "agent" ? "agent" : "ai"}`} key={message.id}>
+                  <div className="message-bubble">
+                    {message.content}
+                    <small>{time(message.created_at)} · {message.sender_type === "customer" ? "cliente" : message.sender_type === "agent" ? "atendente" : "IA"}</small>
+                  </div>
+                </div>
+              )) : (
+                <div className="empty-state"><MessageCircleMore size={28}/><strong>Sem mensagens ainda</strong><p>As mensagens desta conversa aparecerão aqui.</p></div>
+              )}
+
+              {aiInteraction ? (
+                <div className="ai-note">
+                  <Bot size={16}/>
+                  <div>
+                    <strong>Última análise da IA · {(Number(aiInteraction.confidence) * 100).toFixed(0)}% de confiança</strong>
+                    <p>{aiInteraction.part_name || "Peça não identificada"} · decisão: {aiInteraction.decision}{aiInteraction.missing_fields.length ? ` · faltando: ${aiInteraction.missing_fields.join(", ")}` : ""}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="chat-composer">
+              <div className="composer-box">
+                <textarea disabled placeholder="Envio para WhatsApp será habilitado na etapa de integração do canal."/>
+                <div className="composer-actions"><div className="composer-left"><Button variant="ghost" icon={<FileText size={14}/>}>Criar orçamento</Button></div><Button variant="secondary">Canal ainda não conectado</Button></div>
+              </div>
+            </div>
+          </section>
+
+          <aside className="contact-panel">
+            <div className="contact-profile"><Avatar initials={initials(activeCustomer?.name ?? "Cliente")} tone="green"/><h3>{activeCustomer?.name ?? "Cliente"}</h3><p>{activeCustomer?.email || "Sem e-mail"}</p><StatusBadge tone={tone(activeConversation?.status ?? "open")}>{statusLabel[activeConversation?.status ?? "open"]}</StatusBadge></div>
+            <div className="info-section">
+              <div className="info-section-title"><strong>Contato</strong></div>
+              <div className="info-row"><span>WhatsApp</span><strong>{activeCustomer?.whatsapp || activeCustomer?.phone || "—"}</strong></div>
+              <div className="info-row"><span>Canal</span><strong>{activeConversation?.channel ?? "—"}</strong></div>
+            </div>
+            <div className="info-section">
+              <div className="info-section-title"><strong>Veículo</strong><CarFront size={14}/></div>
+              {vehicle ? (
+                <div className="vehicle-card"><strong>{[vehicle.brand,vehicle.model,vehicle.version].filter(Boolean).join(" ")}</strong><span>{vehicle.model_year || vehicle.year || "Ano não informado"} · {vehicle.engine || "motor não informado"} · {vehicle.transmission || "câmbio não informado"}</span></div>
+              ) : <div className="vehicle-card"><strong>Veículo não cadastrado</strong><span>A IA pode coletar esses dados durante a conversa.</span></div>}
+            </div>
+            <div className="info-section">
+              <div className="info-section-title"><strong>Análise da IA</strong><Sparkles size={14}/></div>
+              <div className="ai-analysis">
+                <div className="analysis-title"><Bot size={14}/> Última interpretação</div>
+                <div className="info-row"><span>Peça</span><strong>{aiInteraction?.part_name || "—"}</strong></div>
+                <div className="info-row"><span>Modelo</span><strong>{String(aiVehicle.model ?? vehicle?.model ?? "—")}</strong></div>
+                <div className="info-row"><span>Ano</span><strong>{String(aiVehicle.year ?? vehicle?.model_year ?? vehicle?.year ?? "—")}</strong></div>
+                <div className="info-row"><span>Confiança</span><strong>{aiInteraction ? `${(Number(aiInteraction.confidence)*100).toFixed(0)}%` : "—"}</strong></div>
+                <div className="confidence"><div style={{width:aiInteraction?`${Math.min(100,Number(aiInteraction.confidence)*100)}%`:"0%"}}/></div>
+              </div>
+            </div>
+            <div className="info-section"><Button variant="secondary" icon={<Wrench size={14}/>}>Assumir atendimento</Button></div>
+          </aside>
+        </div>
+      ) : (
+        <div className="surface-card empty-state"><MessageCircleMore size={34}/><strong>Nenhuma conversa registrada</strong><p>Quando o primeiro atendimento for criado, ele aparecerá nesta central.</p></div>
+      )}
     </>
   );
 }
