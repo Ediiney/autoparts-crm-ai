@@ -136,7 +136,7 @@ export default async function ProductDetailPage({params}:{params:Promise<{id:str
 
       <section className="panel-v2">
         <div className="panel-v2-title"><div><h2>Aliases de busca</h2><p>Termos alternativos reconhecidos.</p></div></div>
-        <div className="alias-list-v2">{(aliasesResult.data??[]).length?(aliasesResult.data??[]).map(alias=><span key={alias.id}>{alias.alias}</span>):<EmptyLine text="Nenhum alias cadastrado."/ >}</div>
+        <div className="alias-list-v2">{(aliasesResult.data??[]).length?(aliasesResult.data??[]).map(alias=><span key={alias.id}>{alias.alias}</span>):<EmptyLine text="Nenhum alias cadastrado."/>}</div>
       </section>
     </div>
   </div>;
