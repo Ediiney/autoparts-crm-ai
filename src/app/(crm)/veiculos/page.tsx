@@ -67,7 +67,7 @@ export default async function VeiculosPage() {
                   <td>{vehicle.transmission || "—"}</td>
                   <td>{vehicle.customer_name || "Cliente"}</td>
                   <td>{vehicle.plate || "—"}</td>
-                  <td><Link className="row-action-v2" href={`/veiculos/${vehicle.id}`}>Detalhes</Link></td>
+                  <td><Link className="row-action-v2" prefetch={false} href={`/veiculos/${vehicle.id}`}>Detalhes</Link></td>
                 </tr>
               ))}
             </tbody>
