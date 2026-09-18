@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                 {recentConversations.map((item) => {
                   const name = item.customer_name || "Cliente";
                   return (
-                    <Link className="dashboard-v4-list-row" href={`/conversas?id=${item.id}`} prefetch={false} key={item.id}>
+                    <Link className="dashboard-v4-list-row" href={`/conversas?id=${item.id}`} key={item.id}>
                       <div className="dashboard-v4-avatar">{initials(name)}</div>
                       <div><strong>{name}</strong><span>{statusLabels[item.status] ?? item.status.replaceAll("_"," ")}</span></div>
                       <span className={`dashboard-v4-state ${item.status}`}>{statusLabels[item.status] ?? item.status}</span>
@@ -167,7 +167,7 @@ export default async function DashboardPage() {
                   const qty = Number(product.available_quantity ?? 0);
                   const price = product.price === null ? null : Number(product.price);
                   return (
-                    <Link href={`/catalogo/${product.id}`} prefetch={false} key={product.id}>
+                    <Link href={`/catalogo/${product.id}`} key={product.id}>
                       <div className="dashboard-v4-product-icon"><PackageSearch size={17}/></div>
                       <div><strong>{product.name}</strong><span>{product.sku}</span></div>
                       <div><strong>{price !== null ? money(price) : "Sem preço"}</strong><span className={qty > 0 ? "ok" : ""}>{qty > 0 ? `${qty} un.` : "Sem saldo"}</span></div>
