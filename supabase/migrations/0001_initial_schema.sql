@@ -2,8 +2,8 @@
 -- PostgreSQL / Supabase
 -- Segurança: todas as tabelas públicas têm RLS e grants explícitos.
 
-create extension if not exists pgcrypto;
-create extension if not exists pg_trgm;
+create extension if not exists pgcrypto with schema extensions;
+create extension if not exists pg_trgm with schema extensions;
 
 create schema if not exists private;
 revoke all on schema private from public;
@@ -394,10 +394,10 @@ create table public.catalog_import_rows (
 );
 
 create index products_company_idx on public.products(company_id, active);
-create index products_normalized_name_trgm_idx on public.products using gin(normalized_name gin_trgm_ops);
+create index products_normalized_name_trgm_idx on public.products using gin(normalized_name extensions.gin_trgm_ops);
 create index products_sku_idx on public.products(company_id, sku);
 create index product_aliases_company_idx on public.product_aliases(company_id, product_id);
-create index product_aliases_trgm_idx on public.product_aliases using gin(normalized_alias gin_trgm_ops);
+create index product_aliases_trgm_idx on public.product_aliases using gin(normalized_alias extensions.gin_trgm_ops);
 create index applications_product_idx on public.vehicle_applications(company_id, product_id);
 create index applications_vehicle_idx on public.vehicle_applications(company_id, normalized_brand, normalized_model, year_start, year_end);
 create index product_prices_lookup_idx on public.product_prices(company_id, product_id, price_type, valid_from desc);
@@ -474,9 +474,9 @@ as $$
     p.sku,
     p.name,
     greatest(
-      similarity(p.normalized_name, n.q),
+      extensions.similarity(p.normalized_name, n.q),
       coalesce((
-        select max(similarity(pa.normalized_alias, n.q))
+        select max(extensions.similarity(pa.normalized_alias, n.q))
         from public.product_aliases pa
         where pa.product_id = p.id
           and pa.company_id = p_company_id
@@ -487,7 +487,7 @@ as $$
   where p.company_id = p_company_id
     and p.active = true
     and (
-      p.normalized_name % n.q
+      extensions.similarity(p.normalized_name, n.q) >= 0.20
       or p.normalized_name like '%' || n.q || '%'
       or exists (
         select 1
@@ -495,7 +495,7 @@ as $$
         where pa.product_id = p.id
           and pa.company_id = p_company_id
           and (
-            pa.normalized_alias % n.q
+            extensions.similarity(pa.normalized_alias, n.q) >= 0.20
             or pa.normalized_alias like '%' || n.q || '%'
           )
       )
