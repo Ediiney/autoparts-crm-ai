@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -71,6 +71,11 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
 
   function warmRoute(href: string) {
     if (href !== pathname) router.prefetch(href);
@@ -124,6 +129,7 @@ export function AppShell({
                   onMouseEnter={() => warmRoute(href)}
                   onTouchStart={() => warmRoute(href)}
                   onFocus={() => warmRoute(href)}
+                  onClick={() => { if (href !== pathname) setPendingPath(href); }}
                 >
                   <Icon size={18} strokeWidth={1.8} />
                   <span>{label}</span>
@@ -153,7 +159,8 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="crm-main">
+      <main className="crm-main" aria-busy={Boolean(pendingPath)}>
+        <div className={pendingPath ? "crm-route-progress active" : "crm-route-progress"} aria-hidden="true"><span /></div>
         <header className="crm-topbar">
           <div className="crm-topbar-context">
             <WorkspaceToolbar branches={branches} branchId={branchId} timezone={timezone} />
