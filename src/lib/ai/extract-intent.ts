@@ -2,6 +2,11 @@ import OpenAI from "openai";
 import { detectFallbackPart, normalizeText } from "./normalize";
 import type { MissingField, PartIntent, VehicleIntent } from "./types";
 
+export type PreviousIntentContext = {
+  partName?: string;
+  vehicle?: VehicleIntent;
+};
+
 const schema = {
   type: "object",
   additionalProperties: false,
@@ -68,20 +73,20 @@ function augmentMissingFields(intent: PartIntent): PartIntent {
   const missing = new Set(intent.missingFields);
 
   if (!intent.partName) missing.add("part_name");
-
-  // Em autopeças, modelo + ano são a base mínima para tentar uma aplicação.
   if (!intent.vehicle.model) missing.add("model");
   if (!intent.vehicle.year) missing.add("year");
 
   return { ...intent, missingFields: [...missing] };
 }
 
-function fallback(message: string): PartIntent {
-  const partName = detectFallbackPart(message);
+function fallback(message: string, previous?: PreviousIntentContext): PartIntent {
+  const currentPart = detectFallbackPart(message);
+  const partName = currentPart ?? previous?.partName;
+
   const yearMatch = message.match(/\b(19\d{2}|20\d{2}|21\d{2})\b/);
   const normalized = normalizeText(message);
 
-  const vehicle: VehicleIntent = {};
+  const vehicle: VehicleIntent = { ...(previous?.vehicle ?? {}) };
   if (yearMatch) vehicle.year = Number(yearMatch[1]);
 
   if (/\besquerd[ao]\b/.test(normalized)) vehicle.side = "left";
@@ -91,7 +96,7 @@ function fallback(message: string): PartIntent {
 
   const missing: MissingField[] = [];
   if (!partName) missing.push("part_name");
-  missing.push("model");
+  if (!vehicle.model) missing.push("model");
   if (!vehicle.year) missing.push("year");
 
   return {
@@ -99,25 +104,31 @@ function fallback(message: string): PartIntent {
     partName,
     normalizedPartName: partName ? normalizeText(partName) : undefined,
     vehicle,
-    confidence: partName ? 0.58 : 0.25,
+    confidence: partName ? 0.62 : 0.3,
     missingFields: missing,
     provider: "fallback",
   };
 }
 
-export async function extractPartIntent(message: string): Promise<PartIntent> {
+export async function extractPartIntent(
+  message: string,
+  previous?: PreviousIntentContext,
+): Promise<PartIntent> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
 
-  if (!apiKey || !model) return fallback(message);
+  if (!apiKey || !model) return fallback(message, previous);
 
   try {
     const client = new OpenAI({ apiKey });
     const response = await client.responses.create({
       model,
       instructions:
-        "Você extrai dados de consultas brasileiras de autopeças. Não invente dados do veículo. Corrija apenas erros ortográficos óbvios no nome da peça. Se um dado não foi informado ou não puder ser determinado com segurança, retorne null e inclua o campo em missingFields. Não gere preço, código, estoque ou compatibilidade.",
-      input: message,
+        "Você extrai dados de consultas brasileiras de autopeças. Use o contexto anterior apenas para completar a mesma conversa; se a mensagem atual mudar claramente a peça ou o veículo, substitua o dado antigo. Não invente dados do veículo. Corrija apenas erros ortográficos óbvios no nome da peça. Se um dado não foi informado ou não puder ser determinado com segurança, retorne null e inclua o campo em missingFields. Não gere preço, código, estoque ou compatibilidade.",
+      input: JSON.stringify({
+        previousContext: previous ?? null,
+        latestMessage: message,
+      }),
       text: {
         format: {
           type: "json_schema",
@@ -129,13 +140,14 @@ export async function extractPartIntent(message: string): Promise<PartIntent> {
     } as never);
 
     const parsed = JSON.parse(response.output_text) as Record<string, unknown>;
-    const partName = typeof parsed.partName === "string" ? parsed.partName : undefined;
+    const partName = typeof parsed.partName === "string" ? parsed.partName : previous?.partName;
+    const parsedVehicle = compactVehicle(parsed);
 
     return augmentMissingFields({
       rawMessage: message,
       partName,
       normalizedPartName: partName ? normalizeText(partName) : undefined,
-      vehicle: compactVehicle(parsed),
+      vehicle: { ...(previous?.vehicle ?? {}), ...parsedVehicle },
       confidence:
         typeof parsed.confidence === "number"
           ? Math.max(0, Math.min(1, parsed.confidence))
@@ -148,6 +160,6 @@ export async function extractPartIntent(message: string): Promise<PartIntent> {
       rawModelOutput: parsed,
     });
   } catch {
-    return fallback(message);
+    return fallback(message, previous);
   }
 }
