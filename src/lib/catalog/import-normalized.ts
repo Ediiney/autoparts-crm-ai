@@ -1,4 +1,4 @@
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeText } from "@/lib/ai/normalize";
 
 export type NormalizedCatalogItem = {
@@ -65,7 +65,7 @@ async function getCategoryId(
 
 export async function importNormalizedCatalog(
   supabase: SupabaseClient,
-  user: User,
+  user: { id: string },
   companyId: string,
   sourceId: string | undefined,
   fileName: string | undefined,
