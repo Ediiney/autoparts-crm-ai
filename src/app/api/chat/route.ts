@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/require-user";
-import { handleCustomerMessage } from "@/lib/workflow/handle-message";\nimport { getWorkspaceContext } from "@/lib/company/workspace-context";
+import { handleCustomerMessage } from "@/lib/workflow/handle-message";
+import { getWorkspaceContext } from "@/lib/company/workspace-context";
 
 export async function POST(request: Request) {
   try {
@@ -18,9 +19,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const workspace = await getWorkspaceContext();
     const { supabase, user } = await requireUser();
+
     const result = await handleCustomerMessage(supabase, user, {
       companyId: body.companyId,
+      branchId: workspace?.company.id === body.companyId ? workspace.branch?.id : undefined,
       customerId: body.customerId,
       conversationId: body.conversationId,
       message: body.message.trim(),
