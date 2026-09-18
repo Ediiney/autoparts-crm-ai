@@ -66,7 +66,7 @@ export default async function CatalogPage({
   const { data, error } = await supabase.rpc("get_catalog_page", {
     p_branch_id: workspace.branch?.id ?? null,
     p_query: q,
-    p_source: params.source?.trim() || null,
+    p_source: params.source?.trim() || undefined,
     p_limit: 80,
   });
 
