@@ -1,45 +1,24 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, CarFront, CheckCircle2 } from "lucide-react";
 import { AuthForm } from "@/components/auth-form";
-import { createClient } from "@/lib/supabase/server";
+import { AuthShell } from "@/components/auth-shell";
+import { getCurrentPrincipal } from "@/lib/auth/current-principal";
 import { getCurrentCompany } from "@/lib/company/current-company";
 
 export default async function LoginPage() {
-  const supabase=await createClient();
-  const {data:{user}}=await supabase.auth.getUser();
+  const principal = await getCurrentPrincipal();
 
-  if(user) {
-    const company=await getCurrentCompany();
-    redirect(company?"/dashboard":"/onboarding");
+  if (principal) {
+    const company = await getCurrentCompany();
+    redirect(company ? "/dashboard" : "/onboarding");
   }
 
   return (
-    <main className="auth-v2-page">
-      <section className="auth-v2-aside">
-        <Link href="/" className="auth-v2-brand"><span><CarFront size={19}/></span><strong>AutoParts CRM</strong></Link>
-        <div className="auth-v2-aside-copy">
-          <span>Operação centralizada</span>
-          <h1>Volte para o ponto exato onde seu atendimento parou.</h1>
-          <p>Clientes, veículos, catálogo, estoque, conversas e propostas continuam no mesmo workspace.</p>
-          <div className="auth-v2-benefits">
-            <div><CheckCircle2 size={15}/><span>Contexto por empresa e filial.</span></div>
-            <div><CheckCircle2 size={15}/><span>Preço e estoque vindos da base.</span></div>
-            <div><CheckCircle2 size={15}/><span>Histórico comercial preservado.</span></div>
-          </div>
-        </div>
-        <small>AutoParts CRM · Plataforma operacional</small>
-      </section>
-
-      <section className="auth-v2-main">
-        <div className="auth-v2-card">
-          <Link href="/" className="auth-v2-back"><ArrowLeft size={13}/> Voltar para a home</Link>
-          <span className="overline-v2">Acesso</span>
-          <h2>Entrar no workspace</h2>
-          <p>Use o e-mail e a senha cadastrados.</p>
-          <AuthForm mode="login"/>
-        </div>
-      </section>
-    </main>
+    <AuthShell
+      mode="login"
+      title="Entrar no workspace"
+      description="Use seu e-mail e senha para acessar a operação."
+    >
+      <AuthForm mode="login" />
+    </AuthShell>
   );
 }
