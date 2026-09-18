@@ -6,6 +6,7 @@ import type { CatalogCandidate } from "@/lib/catalog/types";
 
 type HandleMessageInput = {
   companyId: string;
+  branchId?: string;
   customerId?: string;
   conversationId?: string;
   message: string;
@@ -56,6 +57,7 @@ async function ensureConversation(
     .from("conversations")
     .insert({
       company_id: input.companyId,
+      branch_id: input.branchId ?? null,
       customer_id: input.customerId ?? null,
       channel: "web",
       status: "open",
@@ -101,6 +103,21 @@ async function saveAiInteraction(
   if (error) throw error;
 }
 
+function interactionBase(
+  input: HandleMessageInput,
+  conversationId: string,
+  messageId: string,
+  rawMessage: string,
+) {
+  return {
+    company_id: input.companyId,
+    branch_id: input.branchId ?? null,
+    conversation_id: conversationId,
+    message_id: messageId,
+    raw_message: rawMessage,
+  };
+}
+
 export async function handleCustomerMessage(
   supabase: SupabaseClient,
   user: User,
@@ -134,26 +151,27 @@ export async function handleCustomerMessage(
         : undefined,
   });
 
+  const commonInteraction = {
+    ...interactionBase(input, conversationId, customerMessageId, input.message),
+    part_name: intent.partName ?? null,
+    normalized_part_name: intent.normalizedPartName ?? null,
+    vehicle: intent.vehicle,
+    confidence: intent.confidence,
+    model: intent.model ?? null,
+    prompt_version: "part-intent-v1",
+    raw_model_output: intent.rawModelOutput ?? null,
+  };
+
   if (intent.missingFields.length > 0) {
     const reply = buildClarification(intent);
 
     await addMessage(supabase, input.companyId, conversationId, "ai", reply);
     await saveAiInteraction(supabase, {
-      company_id: input.companyId,
-      conversation_id: conversationId,
-      message_id: customerMessageId,
-      raw_message: input.message,
-      part_name: intent.partName ?? null,
-      normalized_part_name: intent.normalizedPartName ?? null,
-      vehicle: intent.vehicle,
-      confidence: intent.confidence,
+      ...commonInteraction,
       missing_fields: intent.missingFields,
       candidate_product_ids: [],
       decision: "clarify",
-      model: intent.model ?? null,
       latency_ms: Date.now() - started,
-      prompt_version: "part-intent-v1",
-      raw_model_output: intent.rawModelOutput ?? null,
     });
 
     await supabase
@@ -178,6 +196,7 @@ export async function handleCustomerMessage(
 
   const candidates = await searchCatalog(supabase, {
     companyId: input.companyId,
+    branchId: input.branchId,
     query: intent.partName ?? input.message,
     vehicle: intent.vehicle,
     limit: 12,
@@ -194,21 +213,11 @@ export async function handleCustomerMessage(
 
     await addMessage(supabase, input.companyId, conversationId, "ai", reply);
     await saveAiInteraction(supabase, {
-      company_id: input.companyId,
-      conversation_id: conversationId,
-      message_id: customerMessageId,
-      raw_message: input.message,
-      part_name: intent.partName ?? null,
-      normalized_part_name: intent.normalizedPartName ?? null,
-      vehicle: intent.vehicle,
-      confidence: intent.confidence,
+      ...commonInteraction,
       missing_fields: [],
       candidate_product_ids: candidates.map((item) => item.productId),
       decision: "not_found",
-      model: intent.model ?? null,
       latency_ms: Date.now() - started,
-      prompt_version: "part-intent-v1",
-      raw_model_output: intent.rawModelOutput ?? null,
     });
 
     await supabase
@@ -225,22 +234,18 @@ export async function handleCustomerMessage(
 
     await addMessage(supabase, input.companyId, conversationId, "ai", reply);
     await saveAiInteraction(supabase, {
-      company_id: input.companyId,
-      conversation_id: conversationId,
-      message_id: customerMessageId,
-      raw_message: input.message,
-      part_name: intent.partName ?? null,
-      normalized_part_name: intent.normalizedPartName ?? null,
-      vehicle: intent.vehicle,
-      confidence: intent.confidence,
+      ...commonInteraction,
       missing_fields: [],
       candidate_product_ids: decision.candidates.map((item) => item.productId),
       decision: "multiple_matches",
-      model: intent.model ?? null,
       latency_ms: Date.now() - started,
-      prompt_version: "part-intent-v1",
-      raw_model_output: intent.rawModelOutput ?? null,
     });
+
+    await supabase
+      .from("conversations")
+      .update({ status: "waiting_customer", last_message_at: new Date().toISOString() })
+      .eq("id", conversationId)
+      .eq("company_id", input.companyId);
 
     return {
       conversationId,
@@ -267,21 +272,11 @@ export async function handleCustomerMessage(
 
   await addMessage(supabase, input.companyId, conversationId, "ai", reply);
   await saveAiInteraction(supabase, {
-    company_id: input.companyId,
-    conversation_id: conversationId,
-    message_id: customerMessageId,
-    raw_message: input.message,
-    part_name: intent.partName ?? null,
-    normalized_part_name: intent.normalizedPartName ?? null,
-    vehicle: intent.vehicle,
-    confidence: intent.confidence,
+    ...commonInteraction,
     missing_fields: [],
     candidate_product_ids: [item.productId],
     decision: "matched",
-    model: intent.model ?? null,
     latency_ms: Date.now() - started,
-    prompt_version: "part-intent-v1",
-    raw_model_output: intent.rawModelOutput ?? null,
   });
 
   await supabase
