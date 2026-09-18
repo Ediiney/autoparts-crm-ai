@@ -3,6 +3,8 @@ import { AppShell } from "@/components/app-shell";
 import { getCurrentPrincipal } from "@/lib/auth/current-principal";
 import { getWorkspaceContext } from "@/lib/company/workspace-context";
 
+export const preferredRegion = "gru1";
+
 export default async function CrmLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
