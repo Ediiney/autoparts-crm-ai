@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -72,10 +72,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [pendingPath, setPendingPath] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPendingPath(null);
-  }, [pathname]);
+  const isNavigating = pendingPath !== null && pendingPath !== pathname;
 
   function warmRoute(href: string) {
     if (href !== pathname) router.prefetch(href);
@@ -159,8 +156,8 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="crm-main" aria-busy={Boolean(pendingPath)}>
-        <div className={pendingPath ? "crm-route-progress active" : "crm-route-progress"} aria-hidden="true"><span /></div>
+      <main className="crm-main" aria-busy={isNavigating}>
+        <div className={isNavigating ? "crm-route-progress active" : "crm-route-progress"} aria-hidden="true"><span /></div>
         <header className="crm-topbar">
           <div className="crm-topbar-context">
             <WorkspaceToolbar branches={branches} branchId={branchId} timezone={timezone} />
