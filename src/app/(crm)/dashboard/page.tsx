@@ -1,7 +1,7 @@
 import Link from "next/link";\nimport { PageHeader } from "@/components/page-header";
 import { Avatar, Button, Card, StatusBadge } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentCompany } from "@/lib/company/current-company";
+import { getWorkspaceContext } from "@/lib/company/workspace-context";\nimport { startOfTodayInTimezone } from "@/lib/timezones";
 import {
   ArrowUpRight,
   Bot,
@@ -22,17 +22,6 @@ function brl(value: number) {
   }).format(value);
 }
 
-function todayStartIso() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
-  return new Date(`${parts}T00:00:00-03:00`).toISOString();
-}
-
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "CL";
@@ -49,6 +38,22 @@ export default async function DashboardPage(){
   const companyId = company.id;
   const today = todayStartIso();
 
+  let conversationsTodayQuery = supabase.from("conversations").select("id", { count: "exact", head: true }).eq("company_id", companyId).gte("created_at", today);
+  let aiTodayQuery = supabase.from("ai_interactions").select("id", { count: "exact", head: true }).eq("company_id", companyId).gte("created_at", today);
+  let aiMatchedQuery = supabase.from("ai_interactions").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("decision", "matched").gte("created_at", today);
+  let quotesOpenQuery = supabase.from("quotes").select("id,total,status").eq("company_id", companyId).in("status", ["draft", "sent"]);
+  let quotesAcceptedQuery = supabase.from("quotes").select("id,total,status").eq("company_id", companyId).eq("status", "accepted").gte("created_at", today);
+  let recentConversationsQuery = supabase.from("conversations").select("id,status,last_message_at,customer_id").eq("company_id", companyId).order("last_message_at", { ascending: false, nullsFirst: false }).limit(4);
+
+  if (branchId) {
+    conversationsTodayQuery = conversationsTodayQuery.eq("branch_id", branchId);
+    aiTodayQuery = aiTodayQuery.eq("branch_id", branchId);
+    aiMatchedQuery = aiMatchedQuery.eq("branch_id", branchId);
+    quotesOpenQuery = quotesOpenQuery.eq("branch_id", branchId);
+    quotesAcceptedQuery = quotesAcceptedQuery.eq("branch_id", branchId);
+    recentConversationsQuery = recentConversationsQuery.eq("branch_id", branchId);
+  }
+
   const [
     conversationsToday,
     aiToday,
@@ -58,12 +63,12 @@ export default async function DashboardPage(){
     recentConversationsResult,
     recentProductsResult,
   ] = await Promise.all([
-    supabase.from("conversations").select("id", { count: "exact", head: true }).eq("company_id", companyId).gte("created_at", today),
-    supabase.from("ai_interactions").select("id", { count: "exact", head: true }).eq("company_id", companyId).gte("created_at", today),
-    supabase.from("ai_interactions").select("id", { count: "exact", head: true }).eq("company_id", companyId).eq("decision", "matched").gte("created_at", today),
-    supabase.from("quotes").select("id,total,status").eq("company_id", companyId).in("status", ["draft", "sent"]),
-    supabase.from("quotes").select("id,total,status").eq("company_id", companyId).eq("status", "accepted").gte("created_at", today),
-    supabase.from("conversations").select("id,status,last_message_at,customer_id").eq("company_id", companyId).order("last_message_at", { ascending: false, nullsFirst: false }).limit(4),
+    conversationsTodayQuery,
+    aiTodayQuery,
+    aiMatchedQuery,
+    quotesOpenQuery,
+    quotesAcceptedQuery,
+    recentConversationsQuery,
     supabase.from("products").select("id,sku,name").eq("company_id", companyId).eq("active", true).order("created_at", { ascending: false }).limit(4),
   ]);
 
@@ -115,7 +120,7 @@ export default async function DashboardPage(){
       <PageHeader
         eyebrow="Visão geral"
         title={`Olá, ${firstName}`}
-        description={`Acompanhe a operação da ${company.name} em tempo real.`}
+        description={`Acompanhe ${workspace.branch?.name ?? company.name} no fuso ${workspace.timezone}.`}
         actions={<><Button variant="secondary" icon={<FileText size={15}/>}>Novo orçamento</Button><Button icon={<Plus size={15}/>}>Novo atendimento</Button></>}
       />
 
