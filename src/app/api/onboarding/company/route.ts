@@ -9,7 +9,13 @@ function slugify(name: string) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { name?: string };
+    const body = (await request.json()) as {
+      name?: string;
+      document?: string;
+      phone?: string;
+      email?: string;
+      businessType?: "retail" | "distributor";
+    };
 
     if (!body.name?.trim()) {
       return NextResponse.json({ error: "name é obrigatório." }, { status: 400 });
@@ -24,6 +30,9 @@ export async function POST(request: Request) {
         owner_user_id: user.id,
         name: body.name.trim(),
         slug,
+        document: body.document?.trim() || null,
+        phone: body.phone?.trim() || null,
+        email: body.email?.trim().toLowerCase() || null,
       })
       .select("id,name,slug")
       .single();
@@ -40,6 +49,9 @@ export async function POST(request: Request) {
 
     const { error: settingsError } = await supabase.from("company_settings").insert({
       company_id: company.id,
+      settings: {
+        businessType: body.businessType ?? "retail",
+      },
     });
     if (settingsError) throw settingsError;
 
