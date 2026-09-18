@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/require-user";\nimport { getWorkspaceContext } from "@/lib/company/workspace-context";
+import { requireUser } from "@/lib/auth/require-user";
+import { getWorkspaceContext } from "@/lib/company/workspace-context";
 
 type QuoteItemInput = {
   productId: string;
@@ -40,7 +41,13 @@ export async function POST(request: Request) {
     }
 
     const companyId = body.companyId;
+    const workspace = await getWorkspaceContext();
     const { supabase, user } = await requireUser();
+
+    if (!workspace || workspace.company.id !== companyId) {
+      return NextResponse.json({ error: "Empresa inválida." }, { status: 403 });
+    }
+
     const subtotal = body.items.reduce(
       (sum, item) => sum + item.quantity * item.unitPrice,
       0,
@@ -55,6 +62,7 @@ export async function POST(request: Request) {
       .from("quotes")
       .insert({
         company_id: companyId,
+        branch_id: workspace.branch?.id ?? null,
         customer_id: body.customerId ?? null,
         conversation_id: body.conversationId ?? null,
         status: "draft",
