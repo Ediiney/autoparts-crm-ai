@@ -378,3 +378,15 @@ a{color:inherit}
   .onboarding-top{padding:0 16px}.onboarding-content{padding:28px 14px}.onboarding-copy h1{font-size:28px}
   .choice-grid{grid-template-columns:1fr}.onboarding-side{grid-template-columns:1fr}.onboarding-form{padding:18px}
 }
+
+
+.sidebar-logout{width:30px;height:30px;border:0;border-radius:9px;background:transparent;color:#7f8aa0;display:grid;place-items:center}
+.sidebar-logout:hover{background:#202d40;color:#fff}
+.auth-mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#f0f3f7;border-radius:11px;padding:4px;margin-bottom:22px}
+.auth-mode-switch button{border:0;border-radius:8px;background:transparent;color:#7b8798;height:34px;font-size:10px;font-weight:800}
+.auth-mode-switch button.active{background:#fff;color:#1f6f49;box-shadow:0 1px 4px rgba(15,23,42,.08)}
+.auth-message{border-radius:10px;padding:9px 11px;font-size:10px;line-height:1.45}
+.auth-message.error{background:#fff0ee;color:#aa4335;border:1px solid #f2d2ce}
+.auth-message.success{background:#edf9f2;color:#1d744d;border:1px solid #cfead9}
+.onboarding-error{margin-top:14px}
+.button:disabled{opacity:.62;cursor:not-allowed}
