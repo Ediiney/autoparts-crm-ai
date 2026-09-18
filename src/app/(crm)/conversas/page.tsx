@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Avatar, Button, StatusBadge } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentCompany } from "@/lib/company/current-company";
+import { getWorkspaceContext } from "@/lib/company/workspace-context";\nimport { formatTimeInTimezone } from "@/lib/timezones";
 import {
   Bot,
   CarFront,
@@ -35,15 +35,6 @@ function tone(status: string): "neutral" | "success" | "warning" | "danger" | "i
   if (status === "resolved") return "success";
   if (status === "cancelled") return "danger";
   return "info";
-}
-
-function time(value: string | null) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 export default async function ConversasPage({
@@ -120,7 +111,7 @@ export default async function ConversasPage({
                       <div className="conversation-name"><strong>{name}</strong></div>
                       <div className="conversation-message">{statusLabel[conversation.status] ?? conversation.status}</div>
                     </div>
-                    <div className="conversation-meta"><time>{time(conversation.last_message_at || conversation.created_at)}</time></div>
+                    <div className="conversation-meta"><time>{formatTimeInTimezone(conversation.last_message_at || conversation.created_at, workspace.timezone)}</time></div>
                   </Link>
                 );
               })}
@@ -139,7 +130,7 @@ export default async function ConversasPage({
                 <div className={`message-row ${message.sender_type === "customer" ? "customer" : message.sender_type === "agent" ? "agent" : "ai"}`} key={message.id}>
                   <div className="message-bubble">
                     {message.content}
-                    <small>{time(message.created_at)} · {message.sender_type === "customer" ? "cliente" : message.sender_type === "agent" ? "atendente" : "IA"}</small>
+                    <small>{formatTimeInTimezone(message.created_at, workspace.timezone)} · {message.sender_type === "customer" ? "cliente" : message.sender_type === "agent" ? "atendente" : "IA"}</small>
                   </div>
                 </div>
               )) : (
