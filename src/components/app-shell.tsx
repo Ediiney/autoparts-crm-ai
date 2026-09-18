@@ -77,7 +77,21 @@ export function AppShell({
   }
 
   return (
-    <div className="crm-shell">
+    <>
+
+      <style jsx global>{`
+        .crm-shell{min-height:100vh;display:grid;grid-template-columns:258px minmax(0,1fr);background:#f6f7f9}
+        .crm-sidebar{height:100vh;position:sticky;top:0;display:flex;flex-direction:column;background:#111827;color:#d0d5dd;padding:16px 14px 14px;z-index:40;border-right:1px solid #1f2937}
+        .crm-main{min-width:0}
+        .crm-topbar{height:68px;position:sticky;top:0;z-index:35;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 30px;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);border-bottom:1px solid #e4e7ec}
+        .crm-content{max-width:1680px;margin:0 auto;padding:28px 32px 64px}
+        .crm-nav{display:flex;flex-direction:column;gap:2px;margin-top:17px;min-height:0;overflow:auto}
+        .crm-nav-item{height:39px;display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:7px;padding:0 10px;border-radius:7px;color:#b7c0cd;text-decoration:none;font-size:12px;font-weight:550}
+        .crm-nav-item:hover{background:#1d2939;color:#fff}.crm-nav-item.active{background:#263244;color:#fff}
+        .crm-sidebar-bottom{margin-top:auto}
+        @media(max-width:820px){.crm-shell{display:block}.crm-sidebar{position:fixed;left:0;right:0;top:auto;bottom:0;width:100%;height:68px;padding:6px;z-index:60}.crm-main{padding-bottom:68px}.crm-content{padding:18px 14px 36px}}
+      `}</style>
+      <div className="crm-shell">
       <aside className="crm-sidebar">
         <div className="crm-sidebar-top">
           <Link className="crm-brand" href="/dashboard" prefetch={false} onPointerEnter={() => warmRoute("/dashboard")}>
@@ -149,6 +163,7 @@ export function AppShell({
         </header>
         <div className="crm-content">{children}</div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
