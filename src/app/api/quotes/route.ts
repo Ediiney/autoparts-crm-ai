@@ -17,14 +17,12 @@ export async function POST(request: Request) {
       customerId?: string;
       conversationId?: string;
       notes?: string;
+      expiresAt?: string | null;
       items?: QuoteItemInput[];
     };
 
     if (!body.companyId || !body.items?.length) {
-      return NextResponse.json(
-        { error: "companyId e items são obrigatórios." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Empresa e itens são obrigatórios." }, { status: 400 });
     }
 
     const invalid = body.items.some(
@@ -33,12 +31,10 @@ export async function POST(request: Request) {
         !Number.isFinite(item.quantity) ||
         item.quantity <= 0 ||
         !Number.isFinite(item.unitPrice) ||
-        item.unitPrice < 0,
+        item.unitPrice < 0 ||
+        (item.discount ?? 0) < 0,
     );
-
-    if (invalid) {
-      return NextResponse.json({ error: "Itens inválidos." }, { status: 400 });
-    }
+    if (invalid) return NextResponse.json({ error: "Itens inválidos." }, { status: 400 });
 
     const companyId = body.companyId;
     const workspace = await getWorkspaceContext();
@@ -48,14 +44,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Empresa inválida." }, { status: 403 });
     }
 
-    const subtotal = body.items.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0,
-    );
-    const discount = body.items.reduce(
-      (sum, item) => sum + Math.max(0, item.discount ?? 0),
-      0,
-    );
+    if (body.customerId) {
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("id", body.customerId)
+        .maybeSingle();
+      if (!customer) return NextResponse.json({ error: "Cliente inválido." }, { status: 400 });
+    }
+
+    const productIds = [...new Set(body.items.map((item) => item.productId))];
+    const { data: products, error: productError } = await supabase
+      .from("products")
+      .select("id,name,active")
+      .eq("company_id", companyId)
+      .in("id", productIds);
+    if (productError) throw productError;
+    if ((products ?? []).filter((product) => product.active).length !== productIds.length) {
+      return NextResponse.json({ error: "Há produtos inválidos ou inativos no orçamento." }, { status: 400 });
+    }
+
+    const names = new Map((products ?? []).map((product) => [product.id, product.name]));
+    const subtotal = body.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+    const discount = body.items.reduce((sum, item) => sum + Math.max(0, item.discount ?? 0), 0);
     const total = Math.max(0, subtotal - discount);
 
     const { data: quote, error: quoteError } = await supabase
@@ -69,23 +81,13 @@ export async function POST(request: Request) {
         subtotal,
         discount,
         total,
-        notes: body.notes ?? null,
+        notes: body.notes?.trim() || null,
+        expires_at: body.expiresAt || null,
         created_by: user.id,
       })
       .select("id,number,status,subtotal,discount,total")
       .single();
-
     if (quoteError) throw quoteError;
-
-    const productIds = body.items.map((item) => item.productId);
-    const { data: products, error: productError } = await supabase
-      .from("products")
-      .select("id,name")
-      .eq("company_id", companyId)
-      .in("id", productIds);
-
-    if (productError) throw productError;
-    const names = new Map((products ?? []).map((product) => [product.id, product.name]));
 
     const { error: itemsError } = await supabase.from("quote_items").insert(
       body.items.map((item) => {
@@ -102,7 +104,6 @@ export async function POST(request: Request) {
         };
       }),
     );
-
     if (itemsError) throw itemsError;
 
     return NextResponse.json({ quote }, { status: 201 });
