@@ -1889,6 +1889,19 @@ export type Database = {
         }
         Returns: string
       }
+      create_order: {
+        Args: {
+          p_branch_id: string
+          p_customer_id?: string
+          p_delivery_address?: string
+          p_delivery_type?: string
+          p_items?: Json
+          p_notes?: string
+          p_payment_method?: string
+          p_shipping?: number
+        }
+        Returns: string
+      }
       get_available_stock: {
         Args: {
           p_branch_id?: string
