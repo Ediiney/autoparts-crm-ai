@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { Button, Card, StatusBadge } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentCompany } from "@/lib/company/current-company";
+import { getWorkspaceContext } from "@/lib/company/workspace-context";
 import { FileText, Plus } from "lucide-react";
 
 function tone(status: string): "neutral" | "success" | "warning" | "danger" | "info" | "purple" {
@@ -41,7 +41,7 @@ export default async function OrcamentosPage(){
 
   const customerMap = new Map((customers ?? []).map((customer)=>[customer.id,customer.name]));
   const money = new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
-  const date = new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+  const date = new Intl.DateTimeFormat("pt-BR",{timeZone:workspace.timezone,day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
 
   return (
     <>
