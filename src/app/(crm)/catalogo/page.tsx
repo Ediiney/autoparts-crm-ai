@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Button, Card, StatusBadge } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
@@ -56,7 +57,7 @@ export default async function CatalogoPage(){
         eyebrow="Base de conhecimento"
         title="Catálogo de peças"
         description="Produtos, códigos, aplicações veiculares, preços e aliases usados pela IA."
-        actions={<><Button variant="secondary" icon={<Upload size={15}/>}>Importar catálogo</Button><Button icon={<Plus size={15}/>}>Nova peça</Button></>}
+        actions={<><Link className="button secondary" href="/catalogo/importar"><Upload size={15}/>Importar catálogo</Link><Button icon={<Plus size={15}/>}>Nova peça</Button></>}
       />
 
       <div className="toolbar">
