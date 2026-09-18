@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState } from "react";\nimport { useRouter } from "next/navigation";
 import { Check, PackagePlus, Save } from "lucide-react";
 
 export function NewProductForm() {
-  const [saving,setSaving]=useState(false);
+  const router=useRouter();\n  const [saving,setSaving]=useState(false);
   const [message,setMessage]=useState<{type:"success"|"error";text:string}|null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -49,7 +49,7 @@ export function NewProductForm() {
     }
 
     setMessage({type:"success",text:"Peça cadastrada com sucesso."});
-    window.setTimeout(()=>{window.location.href=`/catalogo/${payload.product.id}`;},600);
+    window.setTimeout(()=>{router.push(`/catalogo/${payload.product.id}`);},600);
   }
 
   return (
