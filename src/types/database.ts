@@ -1712,6 +1712,15 @@ export type Database = {
         }
         Returns: number
       }
+      get_catalog_page: {
+        Args: {
+          p_branch_id?: string
+          p_limit?: number
+          p_query?: string
+          p_source?: string
+        }
+        Returns: Json
+      }
       get_dashboard_summary: {
         Args: { p_branch_id?: string; p_today?: string }
         Returns: Json
