@@ -80,5 +80,5 @@ export function GlobalSearch(){
 
 function ResultGroup({title,items,onSelect}:{title:string;items:Array<{href:string;icon:React.ReactNode;title:string;subtitle:string}>;onSelect:()=>void}){
   if(!items.length)return null;
-  return <section className="global-search-group-v2"><span>{title}</span>{items.map(item=><Link key={item.href} href={item.href} prefetch={false} onClick={onSelect}><i>{item.icon}</i><div><strong>{item.title}</strong><small>{item.subtitle}</small></div></Link>)}</section>;
+  return <section className="global-search-group-v2"><span>{title}</span>{items.map(item=><Link key={item.href} href={item.href} onClick={onSelect}><i>{item.icon}</i><div><strong>{item.title}</strong><small>{item.subtitle}</small></div></Link>)}</section>;
 }
