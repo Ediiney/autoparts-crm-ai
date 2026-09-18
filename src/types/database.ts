@@ -1973,8 +1973,30 @@ export type Database = {
           sku: string
         }[]
       }
+      search_catalog_unified: {
+        Args: {
+          p_branch_id?: string | null
+          p_company_id: string
+          p_limit?: number
+          p_query: string
+        }
+        Returns: {
+          application_text: string | null
+          available_quantity: number | null
+          code: string
+          id: string
+          manufacturer: string | null
+          name: string
+          original_code: string | null
+          price: number | null
+          product_id: string | null
+          provider: string | null
+          score: number
+          source_type: string
+        }[]
+      }
       search_reference_catalog: {
-        Args: { p_limit?: number; p_provider?: string; p_query: string }
+        Args: { p_limit?: number; p_provider?: string | null; p_query: string }
         Returns: {
           application_text: string
           applications: Json
