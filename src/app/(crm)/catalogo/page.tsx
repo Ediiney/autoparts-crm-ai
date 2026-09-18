@@ -179,7 +179,7 @@ export default async function CatalogPage({
           {filtered.map((product) => {
             const qty = Number(product.available_quantity ?? 0);
             return (
-              <Link href={`/catalogo/${product.id}`} className="product-card-v2" key={product.id}>
+              <Link href={`/catalogo/${product.id}`} className="product-card-v2" key={product.id} prefetch={false}>
                 <div className="product-card-v2-media">
                   {product.image_url ? (
                     // Remote catalog media can come from company-managed providers.
@@ -245,7 +245,7 @@ export default async function CatalogPage({
                       </span>
                     </td>
                     <td><span className="source-pill-v2">{product.source || "manual"}</span></td>
-                    <td><Link className="row-action-v2" href={`/catalogo/${product.id}`}>Detalhes</Link></td>
+                    <td><Link className="row-action-v2" prefetch={false} href={`/catalogo/${product.id}`}>Detalhes</Link></td>
                   </tr>
                 );
               })}
