@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { normalizeText } from "@/lib/ai/normalize";
+import { BRAZIL_TIMEZONES } from "@/lib/timezones";
 
 function slugify(name: string) {
   return normalizeText(name).replace(/\s+/g, "-").replace(/^-|-$/g, "");
@@ -15,11 +16,16 @@ export async function POST(request: Request) {
       phone?: string;
       email?: string;
       businessType?: "retail" | "distributor";
+      timezone?: string;
     };
 
     if (!body.name?.trim()) {
-      return NextResponse.json({ error: "name é obrigatório." }, { status: 400 });
+      return NextResponse.json({ error: "Nome é obrigatório." }, { status: 400 });
     }
+
+    const timezone = BRAZIL_TIMEZONES.some((item) => item.value === body.timezone)
+      ? body.timezone!
+      : "America/Sao_Paulo";
 
     const { supabase, user } = await requireUser();
     const slug = `${slugify(body.name)}-${randomUUID().slice(0, 6)}`;
@@ -33,35 +39,37 @@ export async function POST(request: Request) {
         document: body.document?.trim() || null,
         phone: body.phone?.trim() || null,
         email: body.email?.trim().toLowerCase() || null,
+        timezone,
+        business_type: body.businessType ?? "retail",
       })
-      .select("id,name,slug")
+      .select("id,name,slug,timezone")
       .single();
 
     if (companyError) throw companyError;
 
-    const { error: memberError } = await supabase.from("company_members").insert({
-      company_id: company.id,
-      user_id: user.id,
-      role: "owner",
-    });
-
-    if (memberError) throw memberError;
-
-    const { error: settingsError } = await supabase.from("company_settings").insert({
-      company_id: company.id,
-      settings: {
-        businessType: body.businessType ?? "retail",
-      },
-    });
-    if (settingsError) throw settingsError;
-
-    const { data: headquarters } = await supabase
+    const { data: headquarters, error: branchError } = await supabase
       .from("branches")
       .select("id")
       .eq("company_id", company.id)
       .eq("is_headquarters", true)
       .limit(1)
       .maybeSingle();
+
+    if (branchError) throw branchError;
+
+    const { error: memberError } = await supabase.from("company_members").insert({
+      company_id: company.id,
+      user_id: user.id,
+      branch_id: headquarters?.id ?? null,
+      role: "owner",
+    });
+    if (memberError) throw memberError;
+
+    const { error: settingsError } = await supabase.from("company_settings").insert({
+      company_id: company.id,
+      settings: { businessType: body.businessType ?? "retail" },
+    });
+    if (settingsError) throw settingsError;
 
     const { error: warehouseError } = await supabase.from("warehouses").insert({
       company_id: company.id,
