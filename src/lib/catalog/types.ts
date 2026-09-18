@@ -25,6 +25,7 @@ export type CatalogCandidate = {
 
 export type CatalogSearchInput = {
   companyId: string;
+  branchId?: string;
   query: string;
   vehicle: VehicleIntent;
   limit?: number;
