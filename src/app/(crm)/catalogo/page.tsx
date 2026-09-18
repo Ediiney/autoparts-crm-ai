@@ -1,34 +1,90 @@
 import { PageHeader } from "@/components/page-header";
 import { Button, Card, StatusBadge } from "@/components/ui";
-import { Filter, PackageSearch, Plus, Search, Upload } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompany } from "@/lib/company/current-company";
+import { PackageSearch, Plus, Upload } from "lucide-react";
 
-const products=[
-  ["Bandeja de suspensão","Honda Civic 2007–2011 · dianteira esquerda","GIA-4721","R$ 329,90","18","Giancar"],
-  ["Pivô de suspensão","Chevrolet Onix 2020+ · dianteiro","GIA-1828","R$ 189,90","7","Giancar"],
-  ["Junta homocinética","Toyota Corolla 2015–2019","GIA-8330","R$ 459,00","4","Giancar"],
-  ["Bieleta dianteira","Volkswagen Polo 2018+","GIA-2901","R$ 84,50","31","Giancar"],
-  ["Coxim do motor","Honda Fit 2009–2014","GIA-5582","R$ 279,90","6","Giancar"],
-  ["Terminal de direção","Hyundai HB20 2013–2019","GIA-9027","R$ 119,00","0","Giancar"],
-];
+export default async function CatalogoPage(){
+  const company = await getCurrentCompany();
+  if (!company) return null;
 
-export default function CatalogoPage(){
+  const supabase = await createClient();
+  const { data: products, count } = await supabase
+    .from("products")
+    .select("id,sku,name,brand,source,original_code", { count: "exact" })
+    .eq("company_id", company.id)
+    .eq("active", true)
+    .order("updated_at", { ascending: false })
+    .limit(30);
+
+  const rows = products ?? [];
+  const ids = rows.map((product) => product.id);
+
+  const [pricesResult, stockResult, appsResult] = ids.length
+    ? await Promise.all([
+        supabase.from("product_prices").select("product_id,price,valid_from").eq("company_id", company.id).in("product_id", ids).order("valid_from", { ascending: false }),
+        supabase.from("product_inventory").select("product_id,quantity,reserved").eq("company_id", company.id).in("product_id", ids),
+        supabase.from("vehicle_applications").select("product_id,vehicle_brand,vehicle_model,year_start,year_end").eq("company_id", company.id).in("product_id", ids),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
+
+  const prices = new Map<string, number>();
+  for (const row of pricesResult.data ?? []) {
+    if (!prices.has(row.product_id)) prices.set(row.product_id, Number(row.price));
+  }
+
+  const stock = new Map<string, number>();
+  for (const row of stockResult.data ?? []) {
+    stock.set(row.product_id, (stock.get(row.product_id) ?? 0) + Number(row.quantity) - Number(row.reserved));
+  }
+
+  const apps = new Map<string, string>();
+  for (const app of appsResult.data ?? []) {
+    if (!apps.has(app.product_id)) {
+      const years = app.year_start || app.year_end
+        ? `${app.year_start ?? ""}${app.year_end && app.year_end !== app.year_start ? `–${app.year_end}` : ""}`
+        : "";
+      apps.set(app.product_id, [app.vehicle_brand, app.vehicle_model, years].filter(Boolean).join(" "));
+    }
+  }
+
+  const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
   return (
     <>
-      <PageHeader eyebrow="Base de conhecimento" title="Catálogo de peças" description="Produtos, códigos, aplicações veiculares, preços e aliases usados pela IA." actions={<><Button variant="secondary" icon={<Upload size={15}/>}>Importar catálogo</Button><Button icon={<Plus size={15}/>}>Nova peça</Button></>}/>
+      <PageHeader
+        eyebrow="Base de conhecimento"
+        title="Catálogo de peças"
+        description="Produtos, códigos, aplicações veiculares, preços e aliases usados pela IA."
+        actions={<><Button variant="secondary" icon={<Upload size={15}/>}>Importar catálogo</Button><Button icon={<Plus size={15}/>}>Nova peça</Button></>}
+      />
+
       <div className="toolbar">
-        <div className="toolbar-left"><div className="input-shell"><Search size={15}/><input placeholder="Buscar peça, SKU, código original ou aplicação..."/></div><button className="filter-button"><Filter size={14}/> Aplicação</button></div>
-        <div className="toolbar-right"><StatusBadge tone="success">6.842 produtos ativos</StatusBadge></div>
+        <div className="toolbar-right"><StatusBadge tone="success">{count ?? 0} produtos ativos</StatusBadge></div>
       </div>
-      <div className="catalog-grid">
-        {products.map(([name,app,sku,price,stock,source])=>(
-          <Card className="product-card" key={sku}>
-            <div className="product-thumb"><PackageSearch/></div>
-            <div className="product-meta"><StatusBadge tone="info">{source}</StatusBadge><span className="quote-number">{sku}</span></div>
-            <div><h3>{name}</h3><p>{app}</p></div>
-            <div className="product-bottom"><div><div className="product-price">{price}</div><div className={stock==="0"?"product-stock stock-zero":"product-stock stock-good"}>{stock==="0"?"Sem estoque":`${stock} unidades disponíveis`}</div></div><Button variant="secondary">Detalhes</Button></div>
-          </Card>
-        ))}
-      </div>
+
+      {rows.length ? (
+        <div className="catalog-grid">
+          {rows.map((product)=>(
+            <Card className="product-card" key={product.id}>
+              <div className="product-thumb"><PackageSearch/></div>
+              <div className="product-meta"><StatusBadge tone="info">{product.source || "Manual"}</StatusBadge><span className="quote-number">{product.sku}</span></div>
+              <div><h3>{product.name}</h3><p>{apps.get(product.id) || product.brand || product.original_code || "Aplicação ainda não cadastrada"}</p></div>
+              <div className="product-bottom">
+                <div>
+                  <div className="product-price">{prices.has(product.id) ? money.format(prices.get(product.id)!) : "Sem preço"}</div>
+                  <div className={(stock.get(product.id) ?? 0) > 0 ? "product-stock stock-good" : "product-stock stock-zero"}>
+                    {stock.has(product.id) ? `${stock.get(product.id)} unidades disponíveis` : "Sem saldo cadastrado"}
+                  </div>
+                </div>
+                <Button variant="secondary">Detalhes</Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card><div className="empty-state"><PackageSearch size={30}/><strong>Seu catálogo está vazio</strong><p>Use “Importar catálogo” para carregar produtos e aplicações da sua fonte.</p></div></Card>
+      )}
     </>
   );
 }
