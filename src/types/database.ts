@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       ai_interactions: {
         Row: {
+          branch_id: string | null
           candidate_product_ids: string[]
           company_id: string
           confidence: number
@@ -35,6 +36,7 @@ export type Database = {
           vehicle: Json
         }
         Insert: {
+          branch_id?: string | null
           candidate_product_ids?: string[]
           company_id: string
           confidence?: number
@@ -54,6 +56,7 @@ export type Database = {
           vehicle?: Json
         }
         Update: {
+          branch_id?: string | null
           candidate_product_ids?: string[]
           company_id?: string
           confidence?: number
@@ -73,6 +76,13 @@ export type Database = {
           vehicle?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "ai_interactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ai_interactions_company_id_fkey"
             columns: ["company_id"]
