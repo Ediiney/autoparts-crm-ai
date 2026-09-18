@@ -1,50 +1,36 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
-import { getCurrentCompany } from "./current-company";
+import { getWorkspaceBootstrap } from "./workspace-bootstrap";
 
 const BRANCH_COOKIE = "autoparts_branch";
 
 async function loadWorkspaceContext() {
-  const company = await getCurrentCompany();
-  if (!company) return null;
+  const bootstrap = await getWorkspaceBootstrap();
+  if (!bootstrap) return null;
 
-  const supabase = await createClient();
   const cookieStore = await cookies();
-
-  const [{ data: branches }, { data: profile }] = await Promise.all([
-    supabase
-      .from("branches")
-      .select("id,name,code,timezone,city,state,is_headquarters,active")
-      .eq("company_id", company.id)
-      .eq("active", true)
-      .order("is_headquarters", { ascending: false })
-      .order("name"),
-    supabase
-      .from("profiles")
-      .select("timezone")
-      .eq("id", company.user.id)
-      .maybeSingle(),
-  ]);
-
-  const available = branches ?? [];
   const requested = cookieStore.get(BRANCH_COOKIE)?.value;
-  const preferredId = requested || company.memberBranchId || undefined;
+  const preferredId = requested || bootstrap.membership.branch_id || undefined;
+
   const branch =
-    available.find((item) => item.id === preferredId) ||
-    available.find((item) => item.is_headquarters) ||
-    available[0] ||
+    bootstrap.branches.find((item) => item.id === preferredId) ||
+    bootstrap.branches.find((item) => item.is_headquarters) ||
+    bootstrap.branches[0] ||
     null;
 
   const timezone =
-    profile?.timezone ||
     branch?.timezone ||
-    company.timezone ||
+    bootstrap.company.timezone ||
     "America/Sao_Paulo";
 
   return {
-    company,
-    branches: available,
+    company: {
+      ...bootstrap.company,
+      role: bootstrap.membership.role,
+      memberBranchId: bootstrap.membership.branch_id,
+      user: bootstrap.principal,
+    },
+    branches: bootstrap.branches,
     branch,
     timezone,
   };

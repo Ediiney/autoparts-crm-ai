@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   Bell,
@@ -65,12 +65,17 @@ export function AppShell({
   timezone: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function warmRoute(href: string) {
+    if (href !== pathname) router.prefetch(href);
+  }
 
   return (
     <div className="shell-v2">
       <aside className="sidebar-v2">
         <div className="sidebar-v2-head">
-          <Link href="/dashboard" className="brand-v2">
+          <Link href="/dashboard" prefetch={false} onPointerEnter={() => warmRoute("/dashboard")} className="brand-v2">
             <div className="brand-v2-mark"><CarFront size={19} strokeWidth={2.25} /></div>
             <div><strong>AutoParts</strong><span>CRM</span></div>
           </Link>
@@ -89,7 +94,14 @@ export function AppShell({
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
-              <Link className={active ? "nav-v2-item active" : "nav-v2-item"} href={href} key={href}>
+              <Link
+                className={active ? "nav-v2-item active" : "nav-v2-item"}
+                href={href}
+                key={href}
+                prefetch={false}
+                onPointerEnter={() => warmRoute(href)}
+                onFocus={() => warmRoute(href)}
+              >
                 <Icon size={17} strokeWidth={1.8} />
                 <span>{label}</span>
                 {active ? <ChevronRight size={13} className="nav-v2-arrow" /> : null}
