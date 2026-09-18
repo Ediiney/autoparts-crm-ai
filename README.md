@@ -1,3 +1,5 @@
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FEdiiney%2Fautoparts-crm-ai&project-name=autoparts-crm-ai&repository-name=autoparts-crm-ai)
+
 # AutoParts CRM AI
 
 Aplicação web para atendimento, CRM, busca de autopeças, cotação e automação por IA.
