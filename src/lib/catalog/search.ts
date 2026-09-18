@@ -22,6 +22,12 @@ type ApplicationRow = {
   position: string | null;
 };
 
+type InventoryRow = {
+  product_id: string;
+  quantity: number;
+  reserved: number;
+};
+
 export async function searchCatalog(
   supabase: SupabaseClient,
   input: CatalogSearchInput,
@@ -40,38 +46,49 @@ export async function searchCatalog(
   const productIds = rows.map((row) => row.product_id);
   const nowIso = new Date().toISOString();
 
-  const [applicationsResult, pricesResult, inventoryResult, warehousesResult] =
-    await Promise.all([
-      supabase
-        .from("vehicle_applications")
-        .select("product_id,vehicle_brand,vehicle_model,year_start,year_end,engine,version,side,axle,position")
-        .eq("company_id", input.companyId)
-        .in("product_id", productIds),
-      supabase
-        .from("product_prices")
-        .select("product_id,price,price_type,branch_id,valid_from,valid_to")
-        .eq("company_id", input.companyId)
-        .in("product_id", productIds)
-        .lte("valid_from", nowIso)
-        .order("valid_from", { ascending: false }),
-      supabase
-        .from("product_inventory")
-        .select("product_id,warehouse_id,quantity,reserved")
-        .eq("company_id", input.companyId)
-        .in("product_id", productIds),
-      supabase
-        .from("warehouses")
-        .select("id,branch_id")
-        .eq("company_id", input.companyId)
-        .eq("active", true),
-    ]);
+  let pricesQuery = supabase
+    .from("product_prices")
+    .select("product_id,price,price_type,branch_id,valid_from,valid_to")
+    .eq("company_id", input.companyId)
+    .in("product_id", productIds)
+    .lte("valid_from", nowIso)
+    .order("valid_from", { ascending: false });
+
+  if (input.branchId) {
+    pricesQuery = pricesQuery.or(`branch_id.eq.${input.branchId},branch_id.is.null`);
+  }
+
+  let inventoryQuery = supabase
+    .from("product_inventory")
+    .select("product_id,quantity,reserved,warehouse:warehouses!inner(branch_id)")
+    .eq("company_id", input.companyId)
+    .in("product_id", productIds);
+
+  if (input.branchId) {
+    inventoryQuery = inventoryQuery.eq("warehouse.branch_id", input.branchId);
+  }
+
+  const [applicationsResult, pricesResult, inventoryResult] = await Promise.all([
+    supabase
+      .from("vehicle_applications")
+      .select("product_id,vehicle_brand,vehicle_model,year_start,year_end,engine,version,side,axle,position")
+      .eq("company_id", input.companyId)
+      .in("product_id", productIds),
+    pricesQuery,
+    inventoryQuery,
+  ]);
 
   if (applicationsResult.error) throw applicationsResult.error;
   if (pricesResult.error) throw pricesResult.error;
   if (inventoryResult.error) throw inventoryResult.error;
-  if (warehousesResult.error) throw warehousesResult.error;
 
-  const applications = (applicationsResult.data ?? []) as ApplicationRow[];
+  const applicationsByProduct = new Map<string, ApplicationRow[]>();
+  for (const application of (applicationsResult.data ?? []) as ApplicationRow[]) {
+    const bucket = applicationsByProduct.get(application.product_id);
+    if (bucket) bucket.push(application);
+    else applicationsByProduct.set(application.product_id, [application]);
+  }
+
   const priceMap = new Map<string, { price: number; priceType: string }>();
   const pricePriority = new Map<string, number>();
 
@@ -97,21 +114,14 @@ export async function searchCatalog(
     });
   }
 
-  const allowedWarehouses = new Set(
-    (warehousesResult.data ?? [])
-      .filter((warehouse) => !input.branchId || warehouse.branch_id === input.branchId)
-      .map((warehouse) => warehouse.id),
-  );
-
   const stockMap = new Map<string, number>();
-  for (const row of inventoryResult.data ?? []) {
-    if (input.branchId && !allowedWarehouses.has(row.warehouse_id)) continue;
+  for (const row of (inventoryResult.data ?? []) as unknown as InventoryRow[]) {
     const available = Number(row.quantity) - Number(row.reserved);
     stockMap.set(row.product_id, (stockMap.get(row.product_id) ?? 0) + available);
   }
 
   const candidates = rows.map((row) => {
-    const productApps = applications.filter((app) => app.product_id === row.product_id);
+    const productApps = applicationsByProduct.get(row.product_id) ?? [];
     const scoredApps = productApps
       .map((app) => ({ app, score: scoreApplication(app, input.vehicle) }))
       .sort((a, b) => b.score - a.score);
