@@ -94,7 +94,7 @@ export function AppShell({
       <div className="crm-shell">
       <aside className="crm-sidebar">
         <div className="crm-sidebar-top">
-          <Link className="crm-brand" href="/dashboard" prefetch={false} onPointerEnter={() => warmRoute("/dashboard")}>
+          <Link className="crm-brand" href="/dashboard" onPointerEnter={() => warmRoute("/dashboard")}>
             <span className="crm-brand-mark"><CarFront size={19} strokeWidth={2.2} /></span>
             <span className="crm-brand-copy"><strong>AutoParts</strong><small>CRM</small></span>
           </Link>
@@ -118,9 +118,11 @@ export function AppShell({
                 <Link
                   className={active ? "crm-nav-item active" : "crm-nav-item"}
                   href={href}
-                  prefetch={false}
+                 
                   data-mobile={mobile ? "true" : "false"}
                   onPointerEnter={() => warmRoute(href)}
+                  onMouseEnter={() => warmRoute(href)}
+                  onTouchStart={() => warmRoute(href)}
                   onFocus={() => warmRoute(href)}
                 >
                   <Icon size={18} strokeWidth={1.8} />
