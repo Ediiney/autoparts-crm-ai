@@ -5,7 +5,7 @@ import { AuthForm } from "@/components/auth-form";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompany } from "@/lib/company/current-company";
 
-export default async function LoginPage() {
+export default async function CadastroPage() {
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();
 
@@ -15,29 +15,29 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="auth-v2-page">
+    <main className="auth-v2-page signup">
       <section className="auth-v2-aside">
         <Link href="/" className="auth-v2-brand"><span><CarFront size={19}/></span><strong>AutoParts CRM</strong></Link>
         <div className="auth-v2-aside-copy">
-          <span>Operação centralizada</span>
-          <h1>Volte para o ponto exato onde seu atendimento parou.</h1>
-          <p>Clientes, veículos, catálogo, estoque, conversas e propostas continuam no mesmo workspace.</p>
+          <span>Comece pela base certa</span>
+          <h1>Configure sua operação antes de conectar automações.</h1>
+          <p>A conta cria o acesso. Depois você define empresa, filial, fuso e estrutura comercial.</p>
           <div className="auth-v2-benefits">
-            <div><CheckCircle2 size={15}/><span>Contexto por empresa e filial.</span></div>
-            <div><CheckCircle2 size={15}/><span>Preço e estoque vindos da base.</span></div>
-            <div><CheckCircle2 size={15}/><span>Histórico comercial preservado.</span></div>
+            <div><CheckCircle2 size={15}/><span>Matriz criada automaticamente.</span></div>
+            <div><CheckCircle2 size={15}/><span>Fusos brasileiros suportados.</span></div>
+            <div><CheckCircle2 size={15}/><span>Catálogo e canais entram depois.</span></div>
           </div>
         </div>
-        <small>AutoParts CRM · Plataforma operacional</small>
+        <small>Etapa 1 de 2 · Conta → Empresa</small>
       </section>
 
       <section className="auth-v2-main">
         <div className="auth-v2-card">
           <Link href="/" className="auth-v2-back"><ArrowLeft size={13}/> Voltar para a home</Link>
-          <span className="overline-v2">Acesso</span>
-          <h2>Entrar no workspace</h2>
-          <p>Use o e-mail e a senha cadastrados.</p>
-          <AuthForm mode="login"/>
+          <span className="overline-v2">Nova conta</span>
+          <h2>Criar acesso</h2>
+          <p>Leva poucos segundos. A empresa é configurada na próxima etapa.</p>
+          <AuthForm mode="signup"/>
         </div>
       </section>
     </main>

@@ -1,21 +1,71 @@
-import { PageHeader } from "@/components/page-header";
-import { Card, StatusBadge } from "@/components/ui";
-import { Bot, CircleDollarSign, MessageCircleMore, PackageSearch } from "lucide-react";
+import { BarChart3, Bot, CircleDollarSign, MessageSquareText, SearchX } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getWorkspaceContext } from "@/lib/company/workspace-context";
 
-export default function RelatoriosPage(){
-  return (
-    <>
-      <PageHeader eyebrow="Inteligência operacional" title="Relatórios" description="Indicadores de atendimento, IA, catálogo e vendas."/>
-      <div className="stats-grid">
-        <Card className="stat-card"><div className="stat-top"><div className="stat-icon"><Bot size={18}/></div><StatusBadge tone="success">+4,1%</StatusBadge></div><div className="stat-value">92,6%</div><div className="stat-label">Confiança média da IA</div><div className="sparkline">{[48,55,50,65,68,73,77,80,87,91].map((h,i)=><span key={i} className={i>6?"active":""} style={{height:`${h}%`}}/>)}</div></Card>
-        <Card className="stat-card"><div className="stat-top"><div className="stat-icon blue"><MessageCircleMore size={18}/></div></div><div className="stat-value">348</div><div className="stat-label">Conversas no mês</div><div className="stat-foot"><span className="trend-up">+21%</span> vs. mês anterior</div></Card>
-        <Card className="stat-card"><div className="stat-top"><div className="stat-icon amber"><PackageSearch size={18}/></div></div><div className="stat-value">1.126</div><div className="stat-label">Consultas de peças</div><div className="stat-foot">874 com match direto</div></Card>
-        <Card className="stat-card"><div className="stat-top"><div className="stat-icon purple"><CircleDollarSign size={18}/></div></div><div className="stat-value">31,8%</div><div className="stat-label">Conversão em venda</div><div className="stat-foot"><span className="trend-up">+6,3%</span> no período</div></Card>
-      </div>
-      <div className="dashboard-grid">
-        <Card><div className="card-header"><div><h2 className="card-title">Motivos de perguntas complementares</h2><p className="card-subtitle">Dados que mais faltam nas consultas.</p></div></div><div className="pipeline"><div className="pipeline-row"><span className="pipeline-label">Ano do veículo</span><div className="pipeline-track"><div className="pipeline-fill" style={{width:"92%"}}/></div><strong className="pipeline-count">38%</strong></div><div className="pipeline-row"><span className="pipeline-label">Lado da peça</span><div className="pipeline-track"><div className="pipeline-fill blue" style={{width:"71%"}}/></div><strong className="pipeline-count">29%</strong></div><div className="pipeline-row"><span className="pipeline-label">Motorização</span><div className="pipeline-track"><div className="pipeline-fill amber" style={{width:"46%"}}/></div><strong className="pipeline-count">19%</strong></div><div className="pipeline-row"><span className="pipeline-label">Versão</span><div className="pipeline-track"><div className="pipeline-fill purple" style={{width:"34%"}}/></div><strong className="pipeline-count">14%</strong></div></div></Card>
-        <Card><div className="card-header"><div><h2 className="card-title">Consultas sem resultado</h2><p className="card-subtitle">Oportunidades para enriquecer o catálogo.</p></div></div><div className="simple-list">{["Tensor correia Cruze 2018","Coxim câmbio Sentra 2014","Kit batente Renegade 2020","Terminal axial City 2016"].map((x,i)=><div className="simple-row" key={x}><div className="avatar avatar-slate">{i+1}</div><div className="activity-copy"><strong>{x}</strong><span>{7-i} buscas sem match</span></div></div>)}</div></Card>
-      </div>
-    </>
-  );
+export default async function RelatoriosPage() {
+  const workspace=await getWorkspaceContext();
+  if(!workspace) return null;
+  const supabase=await createClient();
+  const companyId=workspace.company.id;
+  const branchId=workspace.branch?.id;
+
+  let aiQuery=supabase.from("ai_interactions").select("decision,confidence,missing_fields,part_name,raw_message,created_at").eq("company_id",companyId).order("created_at",{ascending:false}).limit(500);
+  let conversationsQuery=supabase.from("conversations").select("id,status,created_at").eq("company_id",companyId).order("created_at",{ascending:false}).limit(500);
+  let quotesQuery=supabase.from("quotes").select("id,status,total,created_at").eq("company_id",companyId).order("created_at",{ascending:false}).limit(500);
+
+  if(branchId) {
+    aiQuery=aiQuery.eq("branch_id",branchId);
+    conversationsQuery=conversationsQuery.eq("branch_id",branchId);
+    quotesQuery=quotesQuery.eq("branch_id",branchId);
+  }
+
+  const [{data:ai},{data:conversations},{data:quotes}]=await Promise.all([aiQuery,conversationsQuery,quotesQuery]);
+  const interactions=ai??[];
+  const quoteRows=quotes??[];
+  const matched=interactions.filter(item=>item.decision==="matched");
+  const confidence=matched.length?matched.reduce((sum,item)=>sum+Number(item.confidence),0)/matched.length:0;
+  const accepted=quoteRows.filter(item=>item.status==="accepted");
+  const acceptedValue=accepted.reduce((sum,item)=>sum+Number(item.total),0);
+  const conversion=quoteRows.length?accepted.length/quoteRows.length:0;
+  const money=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+
+  const missing=new Map<string,number>();
+  for(const item of interactions) {
+    for(const field of item.missing_fields??[]) missing.set(field,(missing.get(field)??0)+1);
+  }
+  const missingRows=[...missing.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxMissing=missingRows[0]?.[1]??1;
+
+  const noMatch=new Map<string,number>();
+  for(const item of interactions.filter(row=>row.decision==="not_found")) {
+    const key=item.part_name?.trim()||item.raw_message.trim();
+    if(key) noMatch.set(key,(noMatch.get(key)??0)+1);
+  }
+  const noMatchRows=[...noMatch.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  return <div>
+    <div className="page-heading-v2"><div><span className="overline-v2">Inteligência operacional</span><h1>Relatórios</h1><p>Indicadores reais da atividade recente da {workspace.branch?.name??"empresa"}.</p></div></div>
+
+    <div className="metric-grid-v2">
+      <Metric icon={<Bot size={16}/>} label="Confiança média" value={`${(confidence*100).toFixed(1).replace(".",",")}%`} sub={`${matched.length} matches`}/>
+      <Metric icon={<MessageSquareText size={16}/>} label="Conversas" value={String(conversations?.length??0)} sub="amostra recente"/>
+      <Metric icon={<BarChart3 size={16}/>} label="Conversão" value={`${(conversion*100).toFixed(1).replace(".",",")}%`} sub={`${accepted.length} aceitos`}/>
+      <Metric icon={<CircleDollarSign size={16}/>} label="Valor aceito" value={money.format(acceptedValue)} sub="orçamentos aceitos"/>
+    </div>
+
+    <div className="report-grid-v2">
+      <section className="panel-v2">
+        <div className="panel-v2-title"><div><h2>Dados que mais faltam</h2><p>Campos que geram perguntas complementares.</p></div></div>
+        {missingRows.length?<div className="report-bars-v2">{missingRows.map(([field,count])=><div key={field}><div><span>{field.replaceAll("_"," ")}</span><strong>{count}</strong></div><i><b style={{width:`${Math.max(8,(count/maxMissing)*100)}%`}}/></i></div>)}</div>:<div className="empty-line-v2">Ainda não há perguntas complementares suficientes.</div>}
+      </section>
+      <section className="panel-v2">
+        <div className="panel-v2-title"><SearchX size={16}/><div><h2>Consultas sem resultado</h2><p>Oportunidades para enriquecer o catálogo.</p></div></div>
+        {noMatchRows.length?<div className="report-list-v2">{noMatchRows.map(([name,count],index)=><div key={name}><i>{index+1}</i><div><strong>{name}</strong><span>{count} busca{count>1?"s":""} sem match</span></div></div>)}</div>:<div className="empty-line-v2">Nenhuma consulta sem resultado na amostra recente.</div>}
+      </section>
+    </div>
+  </div>;
+}
+
+function Metric({icon,label,value,sub}:{icon:React.ReactNode;label:string;value:string;sub:string}) {
+  return <div className="metric-v2"><div className="metric-v2-icon">{icon}</div><div><span>{label}</span><strong>{value}</strong><small>{sub}</small></div></div>;
 }
