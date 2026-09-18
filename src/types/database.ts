@@ -137,6 +137,140 @@ export type Database = {
           },
         ]
       }
+      branch_business_hours: {
+        Row: {
+          branch_id: string
+          break_ends_at: string | null
+          break_starts_at: string | null
+          closes_at: string | null
+          company_id: string
+          created_at: string
+          day_of_week: number
+          enabled: boolean
+          id: string
+          opens_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          break_ends_at?: string | null
+          break_starts_at?: string | null
+          closes_at?: string | null
+          company_id: string
+          created_at?: string
+          day_of_week: number
+          enabled?: boolean
+          id?: string
+          opens_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          break_ends_at?: string | null
+          break_starts_at?: string | null
+          closes_at?: string | null
+          company_id?: string
+          created_at?: string
+          day_of_week?: number
+          enabled?: boolean
+          id?: string
+          opens_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_business_hours_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_business_hours_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branches: {
+        Row: {
+          active: boolean
+          address_extra: string | null
+          address_line: string | null
+          address_number: string | null
+          city: string | null
+          code: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          id: string
+          is_headquarters: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          neighborhood: string | null
+          phone: string | null
+          postal_code: string | null
+          state: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address_extra?: string | null
+          address_line?: string | null
+          address_number?: string | null
+          city?: string | null
+          code?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_headquarters?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          neighborhood?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address_extra?: string | null
+          address_line?: string | null
+          address_number?: string | null
+          city?: string | null
+          code?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_headquarters?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          neighborhood?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          state?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalog_import_rows: {
         Row: {
           company_id: string
@@ -190,6 +324,7 @@ export type Database = {
       }
       catalog_imports: {
         Row: {
+          branch_id: string | null
           checksum: string | null
           company_id: string
           created_at: string
@@ -208,6 +343,7 @@ export type Database = {
           updated_rows: number
         }
         Insert: {
+          branch_id?: string | null
           checksum?: string | null
           company_id: string
           created_at?: string
@@ -226,6 +362,7 @@ export type Database = {
           updated_rows?: number
         }
         Update: {
+          branch_id?: string | null
           checksum?: string | null
           company_id?: string
           created_at?: string
@@ -244,6 +381,13 @@ export type Database = {
           updated_rows?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "catalog_imports_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "catalog_imports_company_id_fkey"
             columns: ["company_id"]
@@ -310,6 +454,7 @@ export type Database = {
       companies: {
         Row: {
           active: boolean
+          business_type: string
           created_at: string
           currency: string
           document: string | null
@@ -325,6 +470,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          business_type?: string
           created_at?: string
           currency?: string
           document?: string | null
@@ -340,6 +486,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          business_type?: string
           created_at?: string
           currency?: string
           document?: string | null
@@ -358,6 +505,7 @@ export type Database = {
       company_members: {
         Row: {
           active: boolean
+          branch_id: string | null
           company_id: string
           created_at: string
           id: string
@@ -367,6 +515,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          branch_id?: string | null
           company_id: string
           created_at?: string
           id?: string
@@ -376,6 +525,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          branch_id?: string | null
           company_id?: string
           created_at?: string
           id?: string
@@ -384,6 +534,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "company_members_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "company_members_company_id_fkey"
             columns: ["company_id"]
@@ -488,6 +645,7 @@ export type Database = {
       conversations: {
         Row: {
           assigned_to: string | null
+          branch_id: string | null
           channel: string
           company_id: string
           created_at: string
@@ -500,6 +658,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          branch_id?: string | null
           channel?: string
           company_id: string
           created_at?: string
@@ -512,6 +671,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          branch_id?: string | null
           channel?: string
           company_id?: string
           created_at?: string
@@ -523,6 +683,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_company_id_fkey"
             columns: ["company_id"]
@@ -614,6 +781,7 @@ export type Database = {
       customers: {
         Row: {
           active: boolean
+          branch_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -624,11 +792,13 @@ export type Database = {
           notes: string | null
           phone: string | null
           tags: string[]
+          timezone: string | null
           updated_at: string
           whatsapp: string | null
         }
         Insert: {
           active?: boolean
+          branch_id?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
@@ -639,11 +809,13 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           tags?: string[]
+          timezone?: string | null
           updated_at?: string
           whatsapp?: string | null
         }
         Update: {
           active?: boolean
+          branch_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -654,12 +826,83 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           tags?: string[]
+          timezone?: string | null
           updated_at?: string
           whatsapp?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_connections: {
+        Row: {
+          active: boolean
+          branch_id: string | null
+          company_id: string
+          config: Json
+          created_at: string
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          name: string
+          provider: string
+          secret_ref: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          branch_id?: string | null
+          company_id: string
+          config?: Json
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          name: string
+          provider: string
+          secret_ref?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          branch_id?: string | null
+          company_id?: string
+          config?: Json
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          name?: string
+          provider?: string
+          secret_ref?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_connections_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_connections_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -819,8 +1062,60 @@ export type Database = {
           },
         ]
       }
+      product_media: {
+        Row: {
+          alt_text: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          kind: string
+          product_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          alt_text?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          product_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          alt_text?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          product_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_media_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_media_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_prices: {
         Row: {
+          branch_id: string | null
           company_id: string
           cost: number | null
           created_at: string
@@ -833,6 +1128,7 @@ export type Database = {
           valid_to: string | null
         }
         Insert: {
+          branch_id?: string | null
           company_id: string
           cost?: number | null
           created_at?: string
@@ -845,6 +1141,7 @@ export type Database = {
           valid_to?: string | null
         }
         Update: {
+          branch_id?: string | null
           company_id?: string
           cost?: number | null
           created_at?: string
@@ -857,6 +1154,13 @@ export type Database = {
           valid_to?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_prices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_prices_company_id_fkey"
             columns: ["company_id"]
@@ -950,27 +1254,36 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active: boolean
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           phone: string | null
+          timezone: string | null
           updated_at: string
         }
         Insert: {
+          active?: boolean
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
           phone?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
+          active?: boolean
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1038,6 +1351,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          branch_id: string | null
           company_id: string
           conversation_id: string | null
           created_at: string
@@ -1054,6 +1368,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          branch_id?: string | null
           company_id: string
           conversation_id?: string | null
           created_at?: string
@@ -1070,6 +1385,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          branch_id?: string | null
           company_id?: string
           conversation_id?: string | null
           created_at?: string
@@ -1086,6 +1402,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_company_id_fkey"
             columns: ["company_id"]
@@ -1108,6 +1431,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      supported_timezones: {
+        Row: {
+          active: boolean
+          label: string
+          name: string
+          region_hint: string | null
+          sort_order: number
+          utc_label: string
+        }
+        Insert: {
+          active?: boolean
+          label: string
+          name: string
+          region_hint?: string | null
+          sort_order?: number
+          utc_label: string
+        }
+        Update: {
+          active?: boolean
+          label?: string
+          name?: string
+          region_hint?: string | null
+          sort_order?: number
+          utc_label?: string
+        }
+        Relationships: []
       }
       vehicle_applications: {
         Row: {
@@ -1196,6 +1546,7 @@ export type Database = {
       warehouses: {
         Row: {
           active: boolean
+          branch_id: string | null
           code: string | null
           company_id: string
           created_at: string
@@ -1204,6 +1555,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          branch_id?: string | null
           code?: string | null
           company_id: string
           created_at?: string
@@ -1212,6 +1564,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          branch_id?: string | null
           code?: string | null
           company_id?: string
           created_at?: string
@@ -1219,6 +1572,13 @@ export type Database = {
           name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "warehouses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "warehouses_company_id_fkey"
             columns: ["company_id"]
@@ -1280,6 +1640,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_available_stock: {
+        Args: {
+          p_branch_id?: string
+          p_company_id: string
+          p_product_id: string
+        }
+        Returns: number
+      }
+      next_company_quote_number: {
+        Args: { p_company_id: string }
+        Returns: number
+      }
       search_products: {
         Args: { p_company_id: string; p_limit?: number; p_query: string }
         Returns: {
