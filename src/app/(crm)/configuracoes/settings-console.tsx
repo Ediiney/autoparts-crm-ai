@@ -252,6 +252,19 @@ export function SettingsConsole({
         <div className="settings-v2-security"><ShieldCheck size={15}/><span>RLS e isolamento por empresa ativos</span></div>
       </div>
 
+      <section className="settings-overview-v5">
+        <div className="settings-overview-company-v5">
+          <span>Workspace</span>
+          <strong>{company.name}</strong>
+          <p>{company.legal_name || "Empresa principal da operação"}</p>
+        </div>
+        <div className="settings-overview-stats-v5">
+          <div><span>Filiais</span><strong>{branches.length}</strong><small>unidades cadastradas</small></div>
+          <div><span>Fuso padrão</span><strong>{timezoneOptions.find((tz)=>tz.name===company.timezone)?.label || company.timezone}</strong><small>{timezoneOptions.find((tz)=>tz.name===company.timezone)?.utc_label || ""}</small></div>
+          <div><span>Automação</span><strong>{automation.enabled ? "Ativa" : "Desativada"}</strong><small>{Math.round(automation.confidence*100)}% confiança mínima</small></div>
+        </div>
+      </section>
+
       <div className="settings-v2-layout">
         <aside className="settings-v2-nav">
           {tabs.map(({ id, label, icon: Icon }) => (
