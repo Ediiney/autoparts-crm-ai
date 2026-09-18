@@ -20,7 +20,7 @@ type WorkspaceBootstrapPayload = {
     slug: string;
     timezone: string;
     currency: string;
-    business_type: string | null;
+    business_type: string;
   };
   membership: {
     role: string;
@@ -39,7 +39,7 @@ async function loadWorkspaceBootstrap() {
   if (error) throw error;
   if (!data) return null;
 
-  const payload = data as WorkspaceBootstrapPayload;
+  const payload = data as unknown as WorkspaceBootstrapPayload;
 
   return {
     principal,
