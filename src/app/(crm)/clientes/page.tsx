@@ -81,7 +81,7 @@ export default async function ClientesPage() {
                     </span>
                   </td>
                   <td>
-                    <Link className="row-action-v2" prefetch={false} href={`/clientes/${customer.id}`}>
+                    <Link className="row-action-v2" href={`/clientes/${customer.id}`}>
                       Abrir <MoreHorizontal size={12} />
                     </Link>
                   </td>
