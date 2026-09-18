@@ -1721,12 +1721,20 @@ export type Database = {
         }
         Returns: Json
       }
+      get_conversations_page: {
+        Args: { p_active_id?: string; p_branch_id?: string; p_limit?: number }
+        Returns: Json
+      }
       get_customers_page: {
         Args: { p_branch_id?: string; p_limit?: number }
         Returns: Json
       }
       get_dashboard_summary: {
         Args: { p_branch_id?: string; p_today?: string }
+        Returns: Json
+      }
+      get_inventory_page: {
+        Args: { p_branch_id?: string; p_limit?: number }
         Returns: Json
       }
       get_quotes_page: {
